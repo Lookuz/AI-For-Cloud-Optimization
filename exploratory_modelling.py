@@ -144,7 +144,7 @@ if __name__ == '__main__':
     print('Bagging Regressor Training MSE: ', metrics.mean_squared_error(y_pred, y_test))
 
     # XGBoost
-    xgb = XGBRegressor(objective='reg:squarederror', n_estimators=100, learning_rate=0.1)
+    xgb = XGBRegressor(objective='reg:linear', n_estimators=100, learning_rate=0.1)
     xgb = xgb.fit(x_train, y_train)
     xgb_r2 = xgb.score(x_train, y_train)
     print('XGBoost R2 Training score: ', xgb_r2)
