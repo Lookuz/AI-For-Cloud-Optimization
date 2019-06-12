@@ -48,9 +48,18 @@ nfold = 10
 # SVR with RBF kernel best parameters: 
 # {'C': 5, 'epsilon': 1.5, 'gamma': 10}
 
-C = [1, 3, 5, 7, 9]
-gamma = [8, 10, 15, 20, 50]
-epsilon = [1.1, 1.3 ,1.5, 1.7, 1.9]
+# C = [1, 3, 5, 7, 9]
+# gamma = [8, 10, 15, 20, 50]
+# epsilon = [1.1, 1.3 ,1.5, 1.7, 1.9]
+# param_grid = {'C':C, 'gamma':gamma, 'epsilon':epsilon}
+# SVR with RBF kernel best parameters: 
+# {'C': 5, 'epsilon': 1.7, 'gamma': 50}
+# SVR with RBF kernel best score: 
+# 0.6148717809447564
+
+C = [4, 5, 6]
+gamma = [40, 50, 60, 80, 100]
+epsilon = [1.6, 1.7, 1.8]
 param_grid = {'C':C, 'gamma':gamma, 'epsilon':epsilon}
 
 grid_search_svr = GridSearchCV(svr_rbf, param_grid, cv=nfold, n_jobs=-1)

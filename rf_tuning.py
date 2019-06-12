@@ -36,10 +36,30 @@ print('Random Forest Regressor Training MSE: ', metrics.mean_squared_error(y_pre
 
 # Hyperparameter Tuning
 nfold = 10
-n_estimators = [50, 100, 250, 500]
+# n_estimators = [50, 100, 250, 500]
+# max_features = ['auto']
+# max_depth = [2, 4, 6, 8]
+# min_samples_leaf = [1, 25, 4, 8, 16, 32]
+# bootstrap = [True]
+# Random Forest Regressor best parameters: 
+# {'n_estimators': 500, 'min_samples_leaf': 4, 'max_features': 'auto', 'max_depth': 8, 'bootstrap': True}
+# Random Forest Regressor best score: 
+# 0.6513201077667594
+
+# n_estimators = [400, 500, 600, 800, 1000]
+# max_features = ['auto']
+# max_depth = [7, 9, 11, 13, 15]
+# min_samples_leaf = [3, 4, 5, 6, 7]
+# bootstrap = [True]
+# Random Forest Regressor best parameters: 
+# {'n_estimators': 500, 'min_samples_leaf': 5, 'max_features': 'auto', 'max_depth': 13, 'bootstrap': True}
+# Random Forest Regressor best score: 
+# 0.6627159494321999
+
+n_estimators = [400, 450, 500, 550, 600]
 max_features = ['auto']
-max_depth = [2, 4, 6, 8]
-min_samples_leaf = [1, 2, 4, 8, 16, 32]
+max_depth = [11, 12, 13, 14, 15]
+min_samples_leaf = [3, 4, 5, 6, 7]
 bootstrap = [True]
 
 param_grid = {'n_estimators': n_estimators, 'max_features': max_features, 'bootstrap': bootstrap,
