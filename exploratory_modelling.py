@@ -1,4 +1,5 @@
 import pandas as pd
+import sys
 import write_csv
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -20,6 +21,7 @@ whitelist_cols_q = ['job_id', 'datetime']
 whitelist_cols_x = ['Resource_List.ncpus', 'Resource_List.mem', 'queue', 'dept', 
                         'Resource_List.mpiprocs']
 whitelist_cols_y = ['estimated_cores_used_eng']
+whitelist_cols_y_mem = ['resources_used.mem']
 whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short', 
                         'parallel24', 'openmp', 'serial']
 dept_encoder = preprocessing.LabelEncoder() # Encoding for the dept attribute: Perform fit_labels function to load labels
@@ -100,6 +102,20 @@ def data_extract(e_file, q_file):
 # Whitelist columns are stated in whitelist_cols_x and whitelist_cols_y
 def data_filter_cores(df):
     return df[whitelist_cols_x], df[whitelist_cols_y]
+
+# Extracts memory utilized instead of estimated number of cores used. 
+# Note that memory utilized should have already been transformed by applying log scaling.
+def data_filter_mem(df):
+    return df[whitelist_cols_x], df[whitelist_cols_y_mem]
+
+def data_filter(df):
+    try:
+        if sys.argv[1] == 'mem': # Predict memory instead
+            return data_filter_mem(df)
+        else:
+            return data_filter_cores(df)
+    except IndexError:
+        return data_filter_cores(df)
 
 if __name__ == '__main__':
     # Data Extraction
