@@ -20,8 +20,6 @@ whitelist_cols_y = ['estimated_cores_used_eng']
 whitelist_cols_y_mem = ['resources_used.mem']
 whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short', 
                         'parallel24', 'openmp', 'serial']
-dept_encoder = preprocessing.LabelEncoder() # Encoding for the dept attribute: Perform fit_labels function to load labels
-queue_encoder = preprocessing.LabelEncoder() #Encoding for the queue attribute: Perform fit_labels funciton to load labels
 
 # Extracts the necessary columns from the dataset
 def extract_cols(df, whitelist_cols):
@@ -54,6 +52,9 @@ def feature_eng(df):
 
 # Load labels for LabelEncoder objects
 def fit_labels(df):
+    dept_encoder = preprocessing.LabelEncoder() # Encoding for the dept attribute: Perform fit_labels function to load labels
+    queue_encoder = preprocessing.LabelEncoder() #Encoding for the queue attribute: Perform fit_labels funciton to load labels
+   
     # Fit categorical attributes into numerical labels
     dept_encoder.fit(df['dept'])
     queue_encoder.fit(df['queue'])
@@ -61,7 +62,7 @@ def fit_labels(df):
     return dept_encoder, queue_encoder
 
 # Function that performs the necessary transformation on the data
-def feature_transform(df):
+def feature_transform(df, queue_encoder, dept_encoder):
     # Requested memory scaling
     # Requested memory observed to have long tail distribution
     # Use logarithmic scaling

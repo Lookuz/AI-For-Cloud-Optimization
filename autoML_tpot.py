@@ -12,7 +12,7 @@ df = data_extract('e_20190509v3.pkl', 'q_20190509v3.pkl')
 df = feature_eng(df)
 df = extract_queues(df)
 dept_encoder, queue_encoder = fit_labels(df)
-df = feature_transform(df)
+df = feature_transform(df, queue_encoder, dept_encoder)
 
 # Training/Test Split
 x, y = data_filter(df)
