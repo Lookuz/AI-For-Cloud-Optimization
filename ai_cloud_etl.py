@@ -66,30 +66,49 @@ def feature_transform(df, queue_encoder, dept_encoder):
     # Requested memory scaling
     # Requested memory observed to have long tail distribution
     # Use logarithmic scaling
-    df['Resource_List.mem'] = df['Resource_List.mem'].apply(lambda x: np.log2(x))
-    df['resources_used.mem'] = df['resources_used.mem'].apply(lambda x: np.log2(x) if x > 0 else 0) # account for no cpus used
+    if 'Resource_List.mem' in df.columns:
+        df['Resource_List.mem'] = df['Resource_List.mem'].apply(lambda x: np.log2(x))
+    if 'resources_used.mem' in df.columns:    
+        df['resources_used.mem'] = df['resources_used.mem'].apply(lambda x: np.log2(x) if x > 0 else 0) # account for no cpus used
 
     # Request mpiprocs
     # Requested mpiprocs observed to have long tail distribution
     # Square root scaling performed due to presence of 0 valued attributes
-    df['Resource_List.mpiprocs'] = df['Resource_List.mpiprocs'].apply(lambda x : np.sqrt(x))
+    if 'Resouce_List.mpiprocs' in df.columns:
+        df['Resource_List.mpiprocs'] = df['Resource_List.mpiprocs'].apply(lambda x : np.sqrt(x))
     
     # Transform dept and queue attributes to numerical encoding.
     # Preconditions: Performed fit_labels function before this function call
-    df['queue'] = queue_encoder.transform(df['queue'])
-    df['dept'] = dept_encoder.transform(df['dept'])
+    if 'queue' in df.columns:
+        df['queue'] = queue_encoder.transform(df['queue'])
+    if 'dept' in df.columns:
+        df['dept'] = dept_encoder.transform(df['dept'])
     
     return df
+
+# Function that extracts only data from the e queue
+# Applies column filtering
+def data_extract_e(e_file):
+    df_e = pd.DataFrame()
+    df_e = df_e.append(write_csv.read_pkl(e_file)[0], sort=True)
+    df_e = extract_cols(df_e, whitelist_cols_e)
+
+    return df_e
+
+# Function that extracts data from the q queue
+# Applies columns filtering
+def data_extract_q(q_file):
+    df_q = pd.DataFrame()
+    df_q = df_q.append(write_csv.read_pkl(q_file)[0], sort=True)
+    df_q = extract_cols(df_q, whitelist_cols_q)
+
+    return df_q
 
 # Function that takes in the log files for the queue and end, merges them and returns a DataFrame
 # containing the dataset
 def data_extract(e_file, q_file):
-    df_q = pd.DataFrame()
-    df_q = df_q.append(write_csv.read_pkl(q_file)[0], sort=True)
-    df_q = extract_cols(df_q, whitelist_cols_q)
-    df_e = pd.DataFrame()
-    df_e = df_e.append(write_csv.read_pkl(e_file)[0], sort=True)
-    df_e = extract_cols(df_e, whitelist_cols_e)
+    df_q = data_extract_q(q_file)
+    df_e = data_extract_e(e_file)
 
     df = df_e.merge(df_q, on='job_id', how='inner') # Merge Q and E logs
 

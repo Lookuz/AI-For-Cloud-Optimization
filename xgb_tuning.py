@@ -1,6 +1,6 @@
 import pandas as pd
 import write_csv
-from exploratory_modelling import data_extract_e, data_filter, feature_eng, feature_transform, extract_queues, fit_labels
+from ai_cloud_etl import data_extract_e, data_filter, feature_eng, feature_transform, extract_queues, fit_labels
 import numpy as np
 from sklearn import preprocessing
 from sklearn import metrics
