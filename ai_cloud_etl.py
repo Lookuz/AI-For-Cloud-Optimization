@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
+import joblib
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -132,3 +133,19 @@ def data_filter(df):
             return data_filter_cores(df)
     except IndexError:
         return data_filter_cores(df)
+
+# Function that saves a persistent copy of the model/encoding to a serialized file with name file_name
+def save_data(model, file_name):
+    try:
+        joblib.dump(model, file_name)
+    except:
+        print('Error saving data!')
+
+# Function that loads a persistent serialized model file to memory
+# File should be a pickled file (.pkl)
+def load_data(file_name):
+    try:
+        loaded_data = joblib.load(file_name)
+        return loaded_data
+    except FileNotFoundError:
+        print('File does not exist')
