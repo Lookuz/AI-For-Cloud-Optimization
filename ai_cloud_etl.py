@@ -135,10 +135,10 @@ def data_filter(df):
         return data_filter_cores(df)
 
 # Function that saves a persistent copy of the model/encoding to a serialized file with name file_name
-def save_data(model, file_name):
+def save_data(data, file_name):
     try:
-        joblib.dump(model, file_name)
-    except:
+        joblib.dump(data, file_name)
+    except FileNotFoundError:
         print('Error saving data!')
 
 # Function that loads a persistent serialized model file to memory
@@ -148,4 +148,15 @@ def load_data(file_name):
         loaded_data = joblib.load(file_name)
         return loaded_data
     except FileNotFoundError:
-        print('File does not exist')
+        print('File ', file_name, ' does not exist')
+
+# Loads existing queue_encoder and dept_encoder labels if files are present
+# If optional argument of DataFrame object is given, LabelEncoder objects will be fitted using the given DataFrame
+# if the encoding files are not found, else new LabelEncoder objects will be returned in place
+def load_labels(dept_encodings, queue_encodings, df=None):
+    try:
+        queue_encoder = joblib.load(queue_encodings)
+        dept_encoder = joblib.load(dept_encodings)
+        return dept_encoder, queue_encoder
+    except FileNotFoundError:
+        return fit_labels(df) if df is not None else (preprocessing.LabelEncoder(), preprocessing.LabelEncoder())
