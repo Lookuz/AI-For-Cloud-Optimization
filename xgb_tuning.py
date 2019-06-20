@@ -123,7 +123,9 @@ def load_model(hyperparams_file=None, model_file=None):
                 min_child_weight=param_dict['min_child_weight'],
                 gamma=param_dict['gamma'],
                 reg_alpha=param_dict['reg_alpha'],
-                reg_lambda=param_dict['reg_lambda']
+                reg_lambda=param_dict['reg_lambda'],
+                silent=True,
+                nthread=-1
             )
         except FileNotFoundError:
             pass
@@ -137,7 +139,7 @@ def load_model(hyperparams_file=None, model_file=None):
             pass
     
     # default settings
-    return XGBRegressor(objective='reg:linear', n_estimators=100, learning_rate=0.1)
+    return XGBRegressor(objective='reg:linear', n_estimators=100, learning_rate=0.1, silent=True, nthread=-1)
 
 
 if __name__ == '__main__':

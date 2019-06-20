@@ -45,7 +45,8 @@ def objective_func(params):
         learning_rate=learning_rate,
         depth=depth,
         l2_leaf_reg=l2_leaf_reg,
-        n_estimators=n_estimators
+        n_estimators=n_estimators,
+        thread_count=-1
     )
 
     return -np.mean(cross_val_score(cb, x_train, y_train, cv=10, n_jobs=-1, scoring='neg_mean_squared_error'))\
@@ -100,7 +101,8 @@ def load_model(hyperparams_file=None, model_file=None):
                 learning_rate=param_dict['learning_rate'],
                 depth=param_dict['depth'],
                 l2_leaf_reg=param_dict['l2_leaf_reg'],
-                n_estimators=param_dict['n_estimators']
+                n_estimators=param_dict['n_estimators'],
+                thread_count=-1
             )
         except FileNotFoundError:
             pass
@@ -114,7 +116,7 @@ def load_model(hyperparams_file=None, model_file=None):
             pass
     
     # default settings
-    return CatBoostRegressor()
+    return CatBoostRegressor(thread_count=-1)
 
 if __name__ == '__main__':
     # Data Extraction
