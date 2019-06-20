@@ -9,6 +9,9 @@ from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSe
 from xgboost import XGBRegressor
 from skopt import gp_minimize, dump, load
 
+RES_FILE_NAME = 'xgb_bo_res.z'
+MODEL_FILE_NAME = 'xgb.pkl'
+
 # Parameter grid for Bayesian Optimization hyperparameter tuning
 param_grid = [
     (3, 9), # max_depth
@@ -69,7 +72,7 @@ def objective_func(params):
 def save_model(model):
     try:
         if sys.argv[1] == 'save':
-            save_data(model, 'xgb.pkl')
+            save_data(model, MODEL_FILE_NAME)
         else:
             pass
     except IndexError:
@@ -85,7 +88,7 @@ def bayes_opt(objective_func, param_grid):
     print_hyperparams(res)
 
     print('Best Hyperparameters MSE: ', res.fun)
-    dump(res, 'xgb_bo_res.z')
+    dump(res, RES_FILE_NAME)
     
     return res
 
@@ -127,6 +130,7 @@ def load_model(hyperparams_file=None, model_file=None):
     
     if model_file is not None:
         try:
+            print('Loaded model from ', model_file)
             xgb = load_data(model_file)
             return xgb
         except FileNotFoundError:
@@ -151,7 +155,7 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
 
     # XGBoost
-    xgb = load_model(hyperparams_file='xgb_bo_res.z', )
+    xgb = load_model(hyperparams_file=RES_FILE_NAME, model_file=MODEL_FILE_NAME)
     xgb = xgb.fit(x_train, y_train)
     xgb_r2 = xgb.score(x_train, y_train)
     print('XGBoost R2 Training score: ', xgb_r2)
