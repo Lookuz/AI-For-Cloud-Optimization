@@ -147,7 +147,7 @@ if __name__ == '__main__':
     print('CatBoost Regressor Test MSE: ', metrics.mean_squared_error(y_pred, y_test))
 
     # Save model
-    save_model(cb, MODEL_FILE_NAME)
+    save_model(cb)
 
     # # Hyperparameter tuning
     # res = gp_minimize(objective_func, param_grid, n_jobs=-1, acq_func='EI', n_calls=100, verbose=False)

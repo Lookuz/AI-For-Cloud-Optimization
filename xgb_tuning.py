@@ -105,6 +105,7 @@ def print_hyperparams(res):
     print('reg_alpha: ', res.x[6])
     print('reg_lambda: ', res.x[7])
 
+
 # Loads an XGBRegressor model with specific hyperparameters if specified hyperparameter results file exists
 # Else, attempts to load existing model if specified model file exists
 # Else, loads the default settings for the model
@@ -157,7 +158,7 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
 
     # XGBoost
-    xgb = load_model(hyperparams_file=RES_FILE_NAME, model_file=MODEL_FILE_NAME)
+    xgb = load_model(model_file=MODEL_FILE_NAME)
     xgb = xgb.fit(x_train, y_train)
     xgb_r2 = xgb.score(x_train, y_train)
     print('XGBoost R2 Training score: ', xgb_r2)
