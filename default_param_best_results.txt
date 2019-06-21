@@ -1,0 +1,20 @@
+Random Forest Regressor R2 Training score:  0.8232154977238778
+Random Forest Regressor Training MSE:  0.581747775834732
+Random Forest Regressor R2 Test score:  0.7890033127877629
+Random Forest Regressor Training MSE:  0.7261961146642751
+XGBoost R2 Training score:  0.7720485475590767
+XGBoost Training MSE:  0.7501237311440232
+XGBoost R2 Test score:  0.7574170719001636
+XGBoost Test MSE:  0.8349077997266656
+CatBoost Regressor R2 Training score:  0.7942807780235375
+CatBoost Regressor Training MSE:  0.630881954337676
+CatBoost Regressor R2 Test score:  0.8662300065685644
+CatBoost Regressor Test MSE:  0.7503544242797752
+Gradient Boosting Regressor R2 Training score:  0.772485506656352
+Gradient Boosting Regressor R2 Training MSE:  0.7486858223924207
+Gradient Boosting Regressor R2 Test score:  0.75623905245443
+Gradient Boosting Regressor Test MSE:  0.8389622384754135
+RBF SVR R2 Training score:  0.8092666598644243
+RBF SVR Training MSE:  0.5691669199874466
+RBF SVR R2 Test score:  0.7434253770898158
+RBF SVR Training MSE:  0.7838246376607111

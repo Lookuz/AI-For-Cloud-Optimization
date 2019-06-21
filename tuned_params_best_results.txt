@@ -1,0 +1,65 @@
+Loaded hyperparameters: 
+max_depth:  9
+learning_rate:  0.35057064266845206
+n_estimators:  50
+subsample:  1.0
+min_child_weight:  1
+gamma:  0.5
+reg_alpha:  1.0
+reg_lambda:  0.1
+XGBoost R2 Training score:  0.8242949679932581
+XGBoost Training MSE:  0.5781955446141988
+XGBoost R2 Test score:  0.7858835206484386
+XGBoost Test MSE:  0.7369336336275873
+Loaded hyperparameters: 
+learning_rate:  0.23664651522471766
+depth:  9
+l2_leaf_reg:  0.9428996362703886
+n_estimators:  289
+CatBoost Regressor R2 Training score:  0.767128307699938
+CatBoost Regressor Training MSE:  0.5884858404745708
+CatBoost Regressor R2 Test score:  0.8596585089552153
+CatBoost Regressor Test MSE:  0.739012752019104
+Best Hyperparameters: 
+n_estimators:  97
+max_features:  0.2012547361643712
+min_sample_split:  3
+min_sample_leaf:  1
+Best Hyperparameters MSE:  0.6332909648845346
+Loaded hyperparameters: 
+n_estimators:  97
+max_features:  0.2012547361643712
+min_sample_split:  3
+min_sample_leaf:  1
+Random Forest Regressor R2 Training score:  0.823211250292553
+Random Forest Regressor Training MSE:  0.5817617529294119
+Random Forest Regressor R2 Test score:  0.7895631929597278
+Random Forest Regressor Training MSE:  0.7242691516823899
+Best Hyperparameters: 
+C:  100.0
+gamma:  0.5395231812643052
+epsilon:  1.0
+tol:  1e-05
+Best Hyperparameters MSE:  0.7182126933371982
+Loaded hyperparameters: 
+C:  100.0
+gamma:  0.5395231812643052
+epsilon:  1.0
+tol:  1e-05
+RBF SVR R2 Training score:  0.8245118336516262
+RBF SVR Training MSE:  0.5236738320827974
+RBF SVR R2 Test score:  0.7528879385809324
+RBF SVR Training MSE:  0.7549169119160919
+Loaded hyperparameters: 
+n_estimators:  182
+learning_rate:  0.18792898334545793
+max_depth:  11
+min_samples_split:  2
+min_samples_leaf:  5
+subsample:  0.8715483574355792
+max_features:  0.20102216652837612
+alpha:  0.80651058326556
+Gradient Boosting Regressor R2 Training score:  0.8235705167146362
+Gradient Boosting Regressor R2 Training MSE:  0.580579508788732
+Gradient Boosting Regressor R2 Test score:  0.7885105028100721
+Gradient Boosting Regressor Test MSE:  0.7278922393560671
