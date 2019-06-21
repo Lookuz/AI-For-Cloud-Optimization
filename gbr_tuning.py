@@ -98,8 +98,8 @@ def print_hyperparams(res):
     print('n_estimators: ', res.x[0])
     print('learning_rate: ', res.x[1])
     print('max_depth: ', res.x[2])
-    print('min_child_split: ', res.x[3])
-    print('min_child_leaf: ', res.x[4])
+    print('min_samples_split: ', res.x[3])
+    print('min_samples_leaf: ', res.x[4])
     print('subsample: ', res.x[5])
     print('max_features: ', res.x[6])
     print('alpha: ', res.x[7])
@@ -119,8 +119,8 @@ def load_model(hyperparams_file=None, model_file=None):
                 max_depth=param_dict['max_depth'],
                 learning_rate=param_dict['learning_rate'],
                 n_estimators=param_dict['n_estimators'],
-                min_child_split=param_dict['min_child_split'],
-                min_child_leaf=param_dict['min_child_leaf'],
+                min_samples_split=param_dict['min_samples_split'],
+                min_samples_leaf=param_dict['min_samples_leaf'],
                 subsample=param_dict['subsample'],
                 max_features=param_dict['max_features'],
                 alpha=param_dict['alpha'],
@@ -155,10 +155,10 @@ if __name__ == '__main__':
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
 
     # Hyperparameter tuning
-    res = bayes_opt(objective_func, param_grid)
+    # res = bayes_opt(objective_func, param_grid)
 
     # GradientBoostingRegressor
-    gbr = load_model()
+    gbr = load_model(hyperparams_file=RES_FILE_NAME, model_file=MODEL_FILE_NAME)
     gbr = gbr.fit(x_train, y_train)
     gbr_r2 = gbr.score(x_train, y_train)
     print('Gradient Boosting Regressor R2 Training score: ', gbr_r2)
@@ -172,4 +172,4 @@ if __name__ == '__main__':
     print('Gradient Boosting Regressor Test MSE: ', metrics.mean_squared_error(y_pred, y_test))
 
     # Save model
-    save_model(gbr, 'gbr.pkl')
+    save_model(gbr)

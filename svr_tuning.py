@@ -152,4 +152,4 @@ if __name__ == '__main__':
     print('RBF SVR Training MSE: ', metrics.mean_squared_error(y_pred, y_test))
 
     # Save model
-    save_model(svr_rbf, 'svr.pkl')
+    save_model(svr_rbf)
