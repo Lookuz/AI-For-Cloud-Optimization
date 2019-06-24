@@ -121,3 +121,33 @@ def save_model(model, model_name=None, file_path=None):
         print('Error! Saving this model to file not supported by ai_cloud_model module')
         print('Model aliases supported:')
         print(model_list)
+
+# High level function that takes in a list of models and input data x
+# Outputs the predictions of the stacked model
+# Precondition: input data x needs to already be feature engineered and feature transform using the following functions:
+# extract_cols, feature_eng, feature_transform
+# multi Parameter allows for predictions on dataset x where x has more than 1 row. Else, l2_predict function only
+# gives the prediction of the first row of data even if multiple rows are provided in x.
+def l2_predict(l2_model, models, x, multi=False):
+    x_s = feature_stack(models, x)
+    if multi is True: # predict all rows in dataset x
+        return l2_model.predict(x_s)
+    else:
+        return l2_model.predict(x_s[:1,:]) # Both return values are in numpy array format
+
+
+# Function that takes in first level transformed data x,
+# and returns the predictions of the first level models as new input features for predictions 
+# by a second level stacked model
+# Input data x must have at least one row
+def feature_stack(models, x):
+    x_s = None
+    # Create stacked features using predictions
+    for model in models:
+        l1_pred = np.array(model.predict(x))
+        if x_s is None:
+            x_s = np.c_[l1_pred]
+        else:
+            x_s = np.c_[x_s, l1_pred]
+        
+    return x_s
