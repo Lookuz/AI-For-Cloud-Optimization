@@ -1,6 +1,8 @@
 import sys
 import json
 import re
+import subprocess
+import user2dept
 from preproc import convert_mem
 
 # Python subroutine script that takes in a PBS job script as a command line argument
@@ -9,7 +11,8 @@ from preproc import convert_mem
 # Saving of the processed job script is also available using the save_job_info function
 
 """Global Variables"""
-DEFAULT_FILE_NAME = 'queue_default.json'
+DEFAULT_FILE_NAME = 'queue_default.json' # File to get the queue default parameters from
+DEPT_FILE_NAME = 'user_dept.txt' # File to get user to dept mappings
 QUEUE_PREFIX = '#PBS -q'
 CPU_PREFIX = '#PBS -l'
 SELECT_PREFIX = 'select='
@@ -76,6 +79,19 @@ def main(job_script, save=False):
                 job_info['mpiprocs'] = 0
         except IndexError: # Missing line, use defaults
             pass
+
+        # Get dept
+        try:
+            user_id = subprocess.check_output(['id']).decode('ascii') # get user id using the linux 'id' command
+            user_id = user_id.split()
+            user_id = [s for s in user_id if 'uid' in s]
+            user_id = re.search('\(([^)]+)', user_id[0]).group(1)
+            job_info['user_id'] = user_id
+            dept_dict = user2dept.load_mapping(DEPT_FILE_NAME) # Load mappings for user to dept
+            dept = user2dept.search(dept_dict, user_search=user_id)
+            job_info['dept'] = dept
+        except IndexError:
+            print('uid not found')
         
         if save:
             save_info(job_script=job_script, job_info=job_info)
