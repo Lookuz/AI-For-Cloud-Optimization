@@ -9,7 +9,6 @@ from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from catboost import CatBoostRegressor
-from vecstack import stacking
 
 # Module that provides operations that support model development, testing, tuning and prediction
 
@@ -27,6 +26,7 @@ FILE_SVR = 'svr.pkl'
 FILE_XGB = 'xgb.pkl'
 FILE_CB = 'cb.pkl'
 FILE_GBR = 'gbr.pkl'
+FILE_L2 = 'lr_l2.pkl'
 
 # Mappings for each model alias to it's respective default model initializations
 model_default_dict = {
@@ -43,7 +43,8 @@ model_file_dict = {
     'svr': FILE_SVR,
     'xgb': FILE_XGB,
     'cb': FILE_CB,
-    'gbr': FILE_GBR
+    'gbr': FILE_GBR,
+    'l2': FILE_L2
 }
 
 # List of model aliases to be used in stacking
@@ -60,17 +61,25 @@ def load_model(model_name=None, model_file=None):
         print(model_list)
         return
 
-    if model_file is not None:
-        try:
+    try:
+        if model_file is not None:
             model = load_data(model_file)
-            print('Loaded model from ', model_file)
-            return model
-        except FileNotFoundError:
-            print('Specified file not found')
-            pass
+            print('Loaded model from', model_file)
+        else:
+            model = load_data(model_file_dict[model_name])
+            print('Loaded model from alias', model_name)
+        return model
+    except FileNotFoundError:
+        print('Specified file not found')
+        pass
+    except KeyError:
+        print('Specified model alias is not valid')
+        print('Valid model_name arguments: ')
+        print(model_list)
+        pass
     
     try:
-        print('Loading default settings for ', model_name)
+        print('Loading default settings for', model_name)
         return model_default_dict[model_name]
     except KeyError:
         print('Invalid model type')
@@ -87,13 +96,12 @@ def load_models(_model_list=None):
         try:
             models.append(load_model(model, model_file=model_file_dict[model]))
         except KeyError:
-            print('No file found for ', model)
+            print('No file found for', model)
             pass
     
     return models
 
 # Saves the model into a serialized .pkl file
-# Saves if the appropriate command-line argument is present
 # Uses model_name to determine file path to save the model to based on default file path inn model_file_dict
 # Else, custom file path can be specified via file_path
 def save_model(model, model_name=None, file_path=None):
@@ -105,18 +113,13 @@ def save_model(model, model_name=None, file_path=None):
         return
 
     try:
-        if sys.argv[1] == 'save':
-            if file_path is not None: # if file_path specified, save to file_path if valid
-                if file_path[-4:] != '.pkl':
-                    print('file_path argument should have .pkl extension')
-                else:
-                    save_data(model, file_path)
-                    return
-            save_data(model, model_file_dict[model_name])
-        else:
-            pass
-    except IndexError: # Command line argument not specified
-        pass
+        if file_path is not None: # if file_path specified, save to file_path if valid
+            if file_path[-4:] != '.pkl':
+                print('file_path argument should have .pkl extension')
+            else:
+                save_data(model, file_path)
+                return
+        save_data(model, model_file_dict[model_name])
     except KeyError: # model_name alias specified not supported as per in model_file_dict
         print('Error! Saving this model to file not supported by ai_cloud_model module')
         print('Model aliases supported:')
@@ -141,6 +144,14 @@ def l2_predict(l2_model, models, x, multi=False):
 # by a second level stacked model
 # Input data x must have at least one row
 def feature_stack(models, x):
+    if len(models) <= 0:
+        print('feature_stack function requires at least 1 L1 model')
+        return
+
+    if x is None or len(x) <= 0:
+        print('feature_stack function requires at least 1 row of data')
+        return
+
     x_s = None
     # Create stacked features using predictions
     for model in models:

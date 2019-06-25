@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import joblib
+import job_script_process
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -22,6 +23,9 @@ whitelist_cols_y_mem = ['resources_used.mem']
 whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short', 
                         'parallel24', 'openmp', 'serial']
 
+QUEUE_ENCODING = 'queue_encoder.pkl'
+DEPT_ENCODING = 'dept_encoder.pkl'
+
 # Extracts the necessary columns from the dataset
 def extract_cols(df, whitelist_cols):
     return df[whitelist_cols]
@@ -32,6 +36,8 @@ def extract_queues(df):
     return df[df['queue'].isin(whitelist_queues)]
 
 # Creates new features to identify relations in data
+# Creates the output label cpu_efficiency and estimated_cores used
+# Used only for training data where cpu/walltime values are present
 def feature_eng(df):
     # CPU Efficiency
     # Created by taking CPU time over total time, giving estimate of number of cores used. 
@@ -144,19 +150,50 @@ def save_data(data, file_name):
 # Function that loads a persistent serialized model file to memory
 # File should be a pickled file (.pkl)
 def load_data(file_name):
-    try:
-        loaded_data = joblib.load(file_name)
-        return loaded_data
-    except FileNotFoundError:
-        print('File ', file_name, ' does not exist')
+    loaded_data = joblib.load(file_name.strip())
+    return loaded_data
+
 
 # Loads existing queue_encoder and dept_encoder labels if files are present
 # If optional argument of DataFrame object is given, LabelEncoder objects will be fitted using the given DataFrame
 # if the encoding files are not found, else new LabelEncoder objects will be returned in place
-def load_labels(dept_encodings, queue_encodings, df=None):
+def load_labels(dept_encodings=None, queue_encodings=None, df=None):
     try:
-        queue_encoder = joblib.load(queue_encodings)
-        dept_encoder = joblib.load(dept_encodings)
+        if dept_encodings is None:
+            dept_encodings = DEPT_ENCODING
+        if queue_encodings is None:
+            queue_encodings = QUEUE_ENCODING
+            
+        queue_encoder = load_data(queue_encodings)
+        dept_encoder = load_data(dept_encodings)
         return dept_encoder, queue_encoder
     except FileNotFoundError:
         return fit_labels(df) if df is not None else (preprocessing.LabelEncoder(), preprocessing.LabelEncoder())
+
+# Function that takes in a dictionary containing the feature to value mappings
+# Returns a DataFrame containing the specified features and it's values in the correct order
+# Order: ncpus | mem | queue | dept | mpiprocs
+def to_dataframe(data):
+    cols = [
+        job_script_process.CPU_KEY,
+        job_script_process.MEM_KEY,
+        job_script_process.QUEUE_KEY,
+        job_script_process.DEPT_KEY,
+        job_script_process.MPIPROC_KEY
+    ]
+    df = pd.DataFrame(data, index=[0])
+    df = df[cols]
+
+    return df
+
+# Auxiliary function of to_dataframe that takes in individual values
+def to_dataframe_manual(ncpus, mem, queue, dept, mpiprocs):
+    data = {
+        job_script_process.CPU_KEY : ncpus,
+        job_script_process.MEM_KEY : mem,
+        job_script_process.QUEUE_KEY : queue,
+        job_script_process.DEPT_KEY : dept,
+        job_script_process.MPIPROC_KEY : mpiprocs
+    }
+
+    return to_dataframe(data)
