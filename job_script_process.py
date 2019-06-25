@@ -10,6 +10,8 @@ from preproc import convert_mem
 # containing the features to be used for prediction of resource utilization
 # Saving of the processed job script is also available using the save_job_info function
 
+# If resource values are not present, default values are loaded using the queue defaults file
+
 """Global Variables"""
 DEFAULT_FILE_NAME = 'queue_default.json' # File to get the queue default parameters from
 DEPT_FILE_NAME = 'user_dept.txt' # File to get user to dept mappings
@@ -19,6 +21,13 @@ SELECT_PREFIX = 'select='
 NCPUS_PREFIX = 'ncpus='
 MEM_PREFIX = 'mem='
 MPIPROC_PREFIX = 'mpiprocs='
+
+# Keys for resource values mappings
+CPU_KEY = 'Resource_List.ncpus'
+MEM_KEY = 'Resource_List.mem'
+QUEUE_KEY = 'queue'
+DEPT_KEY = 'dept'
+MPIPROC_KEY = 'Resource_List.mpiprocs'
 
 # Function to serialize the job script information into JSON format for persistent storage
 def save_info(job_script, job_info):
@@ -37,7 +46,7 @@ def main(job_script, save=False):
         try:
             queue = [s for s in job_file if QUEUE_PREFIX in s]
             queue = queue[0].replace(QUEUE_PREFIX, '').strip()
-            job_info['queue'] = queue
+            job_info[QUEUE_KEY] = queue
         except IndexError:
             pass
 
@@ -56,17 +65,17 @@ def main(job_script, save=False):
 
                 ncpus = [s for s in cpu if NCPUS_PREFIX in s]
                 ncpus = int(ncpus[0].replace(NCPUS_PREFIX, '').strip())
-                job_info['ncpus'] = select * ncpus
+                job_info[CPU_KEY] = select * ncpus
             except IndexError: # Missing ncpus, default to queue defaults and select = 1
                 ncpus = defaults[queue]['default_cpu']
-                job_info['ncpus'] = ncpus
+                job_info[CPU_KEY] = ncpus
             
             # Get memory requested
             try:
                 mem = [s for s in cpu if MEM_PREFIX in s]
                 mem = mem[0].replace(MEM_PREFIX, '').strip()
                 mem = convert_mem(mem) # Converts memory requested to KB float using preproc module
-                job_info['mem'] = mem
+                job_info[MEM_KEY] = mem
             except IndexError: # Missing mem TODO: Parse memory defaults
                 pass
 
@@ -74,9 +83,9 @@ def main(job_script, save=False):
             try:
                 mpiprocs = [s for s in job_file if MPIPROC_PREFIX in s]
                 mpiprocs = int(mpiprocs[0].replace(MPIPROC_PREFIX, '').strip())
-                job_info['mpiprocs'] = mpiprocs
+                job_info[MPIPROC_KEY] = mpiprocs
             except IndexError: # Missing mpiprocs, default to 1
-                job_info['mpiprocs'] = 0
+                job_info[MPIPROC_KEY] = 0.0
         except IndexError: # Missing line, use defaults
             pass
 
@@ -85,7 +94,7 @@ def main(job_script, save=False):
             user_id = subprocess.check_output(['id']).decode('ascii') # get user id using the linux 'id' command
             user_id = user_id.split()
             user_id = [s for s in user_id if 'uid' in s]
-            user_id = re.search('\(([^)]+)', user_id[0]).group(1)
+            user_id = re.search('\(([^)]+)', user_id[0]).group(1) # get user id withinn brackets
             job_info['user_id'] = user_id
             dept_dict = user2dept.load_mapping(DEPT_FILE_NAME) # Load mappings for user to dept
             dept = user2dept.search(dept_dict, user_search=user_id)
@@ -107,5 +116,5 @@ if __name__ == '__main__':
             save = True
         main(job_script,save=save)
     except IndexError:
-        print('No job script specified, programing terminating')
+        print('No job script specified, program terminating')
         sys.exit(-1)
