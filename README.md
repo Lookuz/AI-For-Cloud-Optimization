@@ -8,7 +8,6 @@ This repository contains some of the methods, techniques and algorithms that hav
 
 The scheduling system that is used to allocate resources for computational tasks is the PBS system. Using the extracted and transformed data from the logs, we proceeded to apply machine learning techniques to predict the estimated CPU and memory efficiency as well as allocation for the user using their job script. 
 
--
 Methodology
 -
 
@@ -29,7 +28,6 @@ The following scripts are auxiliary scripts for data extraction to be used with 
 - job_script_process: Subroutine script to process the details of a given PBS job script and return the required information on the job
 - queue_extract: Routine script to obtain the default parameters(CPU, memory) of each queue in the cluster. Using to handle missing values and allocate defaults, or provide upper/lower bounding should values be too high/low
 
--
 Upcoming Improvements:
 - 
 *Queue Recommendation*
