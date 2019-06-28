@@ -2,35 +2,33 @@ import subprocess
 import sys
 import re
 import json
-
+from mem_extract import get_mem_default
 # Routine script that processes that current statistics of each active queue
 # Takes in the subroutine script to be called as the first command line argument
 # Outputs a JSON file containing the defaults to be usedin the recommendation tool in situations where
 # CPU and memory requested is not specified
 # Re-run this script to update the defaults should existing configurations of queues/nondes be changed
 
-""" Global Variables"""
+""" Global Variables """
 OUTPUT_FILE_NAME = 'queue_default.json'
 whitelist_queues = ['parallel8', 'parallel12', 'parallel20', 'parallel24', 'serial', 'short', 'gpu', 'volta_gpu']
 DEFAULT_CPU = 'resources_min.ncpus'
 MAX_CPU = 'resources_max.ncpus'
 DEFAULT_CHUNK = 'default_chunk.ncpus'
 
-# Function that calls the subroutine script specified as the command line argument
-def perform_subroutine():
+# Function that calls the subroutine script to process queue details
+def get_queue_details(queue_extract):
     try:
-        res = subprocess.check_output([sys.argv[1]])
+        res = subprocess.check_output(['./' + queue_extract])
         return res
-    except IndexError:
-        print('No argument specified, program terminating')
-        sys.exit()
     except FileNotFoundError:
         print('Specified file does not exist, program terminating')
-        sys.exit()
+        sys.exit(-2)
 
-def main():
+def get_queue_default(queue_extract, mem_extract):
     # Get intermediate file name
-    q_log = perform_subroutine().strip()
+    q_log = get_queue_details(queue_extract).strip()
+    mem_default = get_mem_default(mem_extract)
 
     # Perform processing on the intermediate file
     with open(q_log, 'r') as in_file:
@@ -75,12 +73,25 @@ def main():
                 pass
 
             # TODO: Get default/min/max memory
+            try:
+                q_default[q_lines[0].strip()]['default_mem'] = mem_default[q_lines[0].strip()]
+            except KeyError:
+                pass
+        
+    return q_default
 
+if __name__ == '__main__':
+    try:
+        # Get file names for subroutine scripts from command line arguments
+        queue_extract = sys.argv[1]
+        mem_extract = sys.argv[2]
+        q_default = get_queue_default(queue_extract, mem_extract)
         # Write to output JSON file
         with open(OUTPUT_FILE_NAME, 'w') as outfile:
             json.dump(q_default, outfile)
-        
-    return OUTPUT_FILE_NAME
-
-if __name__ == '__main__':
-    main()
+        print('Saving queue defaults to', OUTPUT_FILE_NAME)
+    except IndexError:
+        print('One or more command line arguments missing')
+        print('Run the script using the following format: ')
+        print('python3', sys.argv[0], '<queue_extraction_script> <memory_extraction_script>')
+        sys.exit(-1)

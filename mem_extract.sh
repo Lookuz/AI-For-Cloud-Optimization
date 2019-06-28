@@ -6,7 +6,7 @@
 
 # Queues
 declare -a queues=(
-    "gpu" "serial" "short" "parallel8" "parallel12" "parallel20" "parallel24"
+    "gpu" "serial" "short" "parallel8" "parallel12" "parallel20" "parallel24" "volta_gpu"
 )
 
 for i in "${queues[@]}"; do
