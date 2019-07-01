@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import sys
 import joblib
-import job_script_process
+import recommendation_global
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -131,9 +131,10 @@ def data_filter_cores(df):
 def data_filter_mem(df):
     return df[whitelist_cols_x], df[whitelist_cols_y_mem]
 
-def data_filter(df):
+def data_filter(df, mem=False):
     try:
-        if sys.argv[1] == 'mem': # Predict memory instead
+        if mem: # Predict memory instead
+            print('Predicting for memory utilization')
             return data_filter_mem(df)
         else:
             return data_filter_cores(df)
@@ -175,11 +176,11 @@ def load_labels(dept_encodings=None, queue_encodings=None, df=None):
 # Order: ncpus | mem | queue | dept | mpiprocs
 def to_dataframe(data):
     cols = [
-        job_script_process.CPU_KEY,
-        job_script_process.MEM_KEY,
-        job_script_process.QUEUE_KEY,
-        job_script_process.DEPT_KEY,
-        job_script_process.MPIPROC_KEY
+        recommendation_global.CPU_KEY,
+        recommendation_global.MEM_KEY,
+        recommendation_global.QUEUE_KEY,
+        recommendation_global.DEPT_KEY,
+        recommendation_global.MPIPROC_KEY
     ]
     df = pd.DataFrame(data, index=[0])
     df = df[cols]
@@ -189,11 +190,11 @@ def to_dataframe(data):
 # Auxiliary function of to_dataframe that takes in individual values
 def to_dataframe_manual(ncpus, mem, queue, dept, mpiprocs):
     data = {
-        job_script_process.CPU_KEY : ncpus,
-        job_script_process.MEM_KEY : mem,
-        job_script_process.QUEUE_KEY : queue,
-        job_script_process.DEPT_KEY : dept,
-        job_script_process.MPIPROC_KEY : mpiprocs
+        recommendation_global.CPU_KEY : ncpus,
+        recommendation_global.MEM_KEY : mem,
+        recommendation_global.QUEUE_KEY : queue,
+        recommendation_global.DEPT_KEY : dept,
+        recommendation_global.MPIPROC_KEY : mpiprocs
     }
 
     return to_dataframe(data)

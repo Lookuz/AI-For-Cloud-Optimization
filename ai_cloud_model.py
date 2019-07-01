@@ -1,6 +1,7 @@
 import numpy as np
 import sys
 from ai_cloud_etl import save_data, load_data
+from itertools import chain
 from sklearn import preprocessing
 from sklearn import metrics
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
@@ -133,10 +134,13 @@ def save_model(model, model_name=None, file_path=None):
 # gives the prediction of the first row of data even if multiple rows are provided in x.
 def l2_predict(l2_model, models, x, multi=False):
     x_s = feature_stack(models, x)
+    if x_s is None:
+        return
+    
     if multi is True: # predict all rows in dataset x
-        return l2_model.predict(x_s)
+        return list(chain(*l2_model.predict(x_s).tolist()))
     else:
-        return l2_model.predict(x_s[:1,:]) # Both return values are in numpy array format
+        return l2_model.predict(x_s[:1,:]).tolist()[0][0] # Both return values are in numpy array format
 
 
 # Function that takes in first level transformed data x,
