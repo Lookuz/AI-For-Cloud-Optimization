@@ -3,7 +3,10 @@ import json
 import re
 import subprocess
 import user2dept
+from math import floor
+from datetime import timedelta
 from preproc import convert_mem
+from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY
 
 # Python subroutine script that takes in a PBS job script as a command line argument
 # Processes the job script by extracting necessary lines as features, and returning a serializable object 
@@ -13,21 +16,14 @@ from preproc import convert_mem
 # If resource values are not present, default values are loaded using the queue defaults file
 
 """Global Variables"""
-DEFAULT_FILE_NAME = 'queue_default.json' # File to get the queue default parameters from
-DEPT_FILE_NAME = 'user_dept.txt' # File to get user to dept mappings
 QUEUE_PREFIX = '#PBS -q'
 CPU_PREFIX = '#PBS -l'
 SELECT_PREFIX = 'select='
 NCPUS_PREFIX = 'ncpus='
 MEM_PREFIX = 'mem='
 MPIPROC_PREFIX = 'mpiprocs='
-
-# Keys for resource values mappings
-CPU_KEY = 'Resource_List.ncpus'
-MEM_KEY = 'Resource_List.mem'
-QUEUE_KEY = 'queue'
-DEPT_KEY = 'dept'
-MPIPROC_KEY = 'Resource_List.mpiprocs'
+WALLTIME_PREFIX = 'walltime='
+SHORT_MAX_WALLTIME = '24:00:00'
 
 # Function to serialize the job script information into JSON format for persistent storage
 def save_info(job_script, job_info):
@@ -35,8 +31,59 @@ def save_info(job_script, job_info):
     with open(outfile_name, 'w') as outfile:
         json.dump(job_info, outfile)
 
+# Function that converts a time string to seconds integer
+# Assumes time to be of format: HH:MM:SS
+def to_seconds(time):
+    hours, minutes, seconds = time.split(':')
+    return int(timedelta(hours=int(hours), minutes=int(minutes), seconds=int(seconds)).total_seconds())
+
+# Function that takes in two time strings, and converts them to time objects based on format specified
+# Returns 0 if time1 is before or equal to time2, else 1
+# Assumes time1 and time2 to be of the following format: HH:MM:SS
+def compare_time(time1, time2):
+    time1 = to_seconds(time1)
+    time2 = to_seconds(time2)
+    return 0 if time1 <= time2 else 1
+
+
+# Function that generates a modified job script with the recommendation settings
+# based on the recommendation on CPUs and queue made
+def generate_recommendation(select, ncpus, memory, queue, job_script):
+    output_file = job_script.rsplit('.', 1)[0] + '_rec.' + job_script.rsplit('.', 1)[1]
+    with open(job_script, 'r') as job_file, open(output_file, 'w') as out_file:
+        for line in job_file.read().split('\n'):
+            if line.startswith(QUEUE_PREFIX):
+                out_file.write(QUEUE_PREFIX + ' ' + queue + '\n')
+
+            elif line.startswith(CPU_PREFIX):
+                if line.rsplit(CPU_PREFIX, 1)[1].strip().startswith(WALLTIME_PREFIX):
+                    # Handle walltime limits
+                    walltime = line.rsplit(WALLTIME_PREFIX, 1)[1]
+                    if queue == 'short':
+                        if compare_time(walltime, SHORT_MAX_WALLTIME) == 1: 
+                            # current walltime exceed 24 hours for short queue
+                            walltime = SHORT_MAX_WALLTIME
+                    out_file.write(CPU_PREFIX + ' ' + WALLTIME_PREFIX + walltime + '\n')
+                    continue
+                
+                # Handle resource line  
+                output_line = CPU_PREFIX + ' '
+                output_line = output_line + SELECT_PREFIX + str(select) + ':'
+                if type(ncpus) is float: # Round floating CPUs down
+                    ncpus = floor(ncpus) 
+                output_line = output_line + NCPUS_PREFIX + str(ncpus) + ':'
+                # TODO: Memory formatting
+                output_line = output_line + MEM_PREFIX + str(memory)
+                out_file.write(output_line + '\n')
+
+            else:
+                out_file.write(line + '\n')
+
+    return output_file
+
+
 # Main function for subroutine
-def main(job_script, save=False):
+def parse_job_script(job_script, save=False):
     with open(job_script, 'r') as infile, open(DEFAULT_FILE_NAME, 'r') as default_file:
         defaults = json.load(default_file)
         job_file = infile.read().split('\n')
@@ -76,8 +123,9 @@ def main(job_script, save=False):
                 mem = mem[0].replace(MEM_PREFIX, '').strip()
                 mem = convert_mem(mem) # Converts memory requested to KB float using preproc module
                 job_info[MEM_KEY] = mem
-            except IndexError: # Missing mem TODO: Parse memory defaults
-                pass
+            except IndexError: # Missing mem
+                mem = convert_mem(defaults[queue]['default_mem'])
+                job_info[MEM_KEY] = mem
 
             # Get mpiprocs
             try:
@@ -86,7 +134,9 @@ def main(job_script, save=False):
                 job_info[MPIPROC_KEY] = mpiprocs
             except IndexError: # Missing mpiprocs, default to 1
                 job_info[MPIPROC_KEY] = 0.0
-        except IndexError: # Missing line, use defaults
+        except IndexError: # Missing line
+            print('Error parsing job script')
+            print('Format for job script is invalid')
             pass
 
         # Get dept
@@ -108,13 +158,15 @@ def main(job_script, save=False):
         return job_info
 
 
-if __name__ == '__main__':
+if __name__ == '____parse_job_script____':
     try:
         job_script = sys.argv[1]
         save = False
         if len(sys.argv) >= 3 and sys.argv[2] == 'save':
             save = True
-        main(job_script,save=save)
+        parse_job_script(job_script,save=save)
     except IndexError:
-        print('No job script specified, program terminating')
+        print('Invalid format. One or more command line arguments are missing')
+        print('Run the script using the following format:')
+        print('python3', sys.argv[0], '<job_script.pbs>')
         sys.exit(-1)

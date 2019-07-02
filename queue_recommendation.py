@@ -76,11 +76,3 @@ def recommend_all(est_cpu, metric=None):
     queue = q_list[0][0]
     
     return queue, recommend_cpu(est_cpu, queue)
-
-
-def main():
-    pass
-
-
-if __name__ == '__main__':
-   main()
