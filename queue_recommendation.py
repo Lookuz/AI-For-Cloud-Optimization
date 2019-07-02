@@ -2,7 +2,7 @@ import os
 import subprocess
 import sys
 import json
-from math import ceil, floor
+from math import ceil, floor, log
 import queue_extract
 from recommendation_global import QUEUE_EXTRACT, MEM_EXTRACT, DEFAULT_FILE_NAME, DEFAULT_CPU, MIN_CHUNK
 
@@ -20,7 +20,7 @@ def load_defaults():
 
     return q_default
 
-q_default = load_defaults()
+q_default = load_defaults() # Load queue defaults
 
 # Function that recommends the number of CPUs and nodes for a job
 # based on the predicted CPU utilization and the queue settings
@@ -33,14 +33,14 @@ def recommend_cpu(est_cpu, queue):
         if est_cpu - min_cpu < 0:
             return 1, min_cpu
         else:
-            threshold = 0.2 # threshold for rounding down instead of up
+            threshold = 0.2 # threshold for rounding down instead of up. If node efficiency for the last node is less than this value, the node is not assigned
             select = est_cpu/float(min_cpu)
             node_eff_bneck = select - floor(select)
             if node_eff_bneck < threshold:
                 select = floor(select)
             else:
                 select = ceil(select)
-                
+
             return select, min_cpu
     except KeyError as e: # TODO: handle missing values
         pass
@@ -53,15 +53,29 @@ def recommend_cpu(est_cpu, queue):
 # node_eff_i = no_cores_used_in_node_i/node_i_chunk
 # total evaluation metric: node_eff_bottleneck * (1/(log(no_of_nodes) + 1))
 def eff_metric(total_ncpus, queue):
-    pass
+    try:
+        min_cpu = q_default[queue][DEFAULT_CPU]
+        node_eff_bneck = (float(total_ncpus) % float(min_cpu))/min_cpu
+        node_eff_bneck = 1 if node_eff_bneck == 0 else node_eff_bneck # Handle full CPU utilization
+        node_util = log(ceil(float(total_ncpus)/float(min_cpu)))
+        return node_eff_bneck * (1/(node_util + 1))
+    except KeyError:
+        pass
 
 
 # Function that recommends both the CPU and queue specifications for the provided job script
 # Takes in an evaluation metric for how efficient resources at a queue are being utlized,
 # and the selects the queue based on that metric
 # If no metric specified, the default metric used will be the eff_metric function
-def recommend_all(metric=None):
-    pass
+def recommend_all(est_cpu, metric=None):
+    if metric == None: # Load default metric if none specified
+        metric = eff_metric
+    # Select queue based on most resource efficient using metric for evaluation
+    q_list = list(map(lambda x: (x, metric(est_cpu, x)), list(q_default.keys())))
+    q_list.sort(key=lambda x: -x[1]) # sort by efficiency, highest first
+    queue = q_list[0][0]
+    
+    return queue, recommend_cpu(est_cpu, queue)
 
 
 def main():
