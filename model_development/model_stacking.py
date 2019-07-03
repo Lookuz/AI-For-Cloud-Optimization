@@ -1,6 +1,7 @@
 import pandas as pd
 import write_csv
-from ai_cloud_etl import data_extract_e, data_filter, feature_eng, feature_transform, extract_queues, load_labels, load_data
+import sys
+from ai_cloud_etl import data_extract_e, data_filter, feature_eng, feature_transform, extract_queues, load_labels, load_data, save_data
 import numpy as np
 from sklearn import preprocessing
 from sklearn import metrics
@@ -29,6 +30,14 @@ FILE_XGB = 'xgb.pkl'
 FILE_CB = 'cb.pkl'
 FILE_GBR = 'gbr.pkl'
 
+# L2 model file names
+FILE_RF_L2 = 'rf_l2.pkl'
+FILE_SVR_L2 = 'svr_l2.pkl'
+FILE_XGB_L2 = 'xgb_l2.pkl'
+FILE_CB_L2 = 'cb_l2.pkl'
+FILE_GBR_L2 = 'gbr_l2.pkl'
+FILE_LR_L2 = 'lr_l2.pkl'
+
 # Mappings for each model alias to it's respective default model initializations
 model_default_dict = {
     'rf': DEFAULT_RF,
@@ -44,11 +53,31 @@ model_file_dict = {
     'svr': FILE_SVR,
     'xgb': FILE_XGB,
     'cb': FILE_CB,
-    'gbr': FILE_GBR
+    'gbr': FILE_GBR,
+    'rf_l2': FILE_RF_L2,
+    'svr_l2': FILE_SVR_L2,
+    'xgb_l2': FILE_XGB_L2,
+    'cb_l2': FILE_CB_L2,
+    'gbr_l2': FILE_GBR_L2,
+    'lr_l2' : FILE_LR_L2
 }
 
 # List of model aliases to be used in stacking
 model_list = ['rf', 'svr', 'xgb', 'cb', 'gbr']
+
+# Saves the model into a serialized .pkl file 
+# Saves if the appropriate command-line argument is present
+def save_model(model, model_name):
+    try:
+        if sys.argv[1] == 'save':
+            save_data(model, model_file_dict[model_name])
+        else:
+            pass
+    except IndexError:
+        pass
+    except KeyError:
+        print('Save error! Specified model name is invalid')
+
 
 # Function that loads existing model from persistent file first if possible
 # Else, initializes a new model
@@ -56,11 +85,13 @@ def load_model(model_name, model_file=None):
     if model_file is not None:
         try:
             model = load_data(model_file)
+            print('Loaded model from ', model_file)
             return model
         except:
             pass
     
     try:
+        print('Loading default settings for ', model_name)
         return model_default_dict[model_name]
     except KeyError:
         print('Invalid model type')
@@ -75,10 +106,11 @@ def main():
     df = extract_queues(df)
     dept_encoder, queue_encoder = load_labels('dept_encoder.pkl', 'queue_encoder.pkl', df=df)
     df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder)
+    df = df[:500000] # Take x number of rows; downscaling dataset due to time constraints
 
     # Training/Test Split
     x, y = data_filter(df)
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1357) # 2468 to use same shuffle as individual models
 
     # Load models from persistent files
     models = [] # List of model objects for use in stacking
@@ -86,21 +118,27 @@ def main():
         models.append(load_model(model, model_file=model_file_dict[model]))
 
     # Stacking
+    # Produces a new set of features based on the predictions of base models
     x_train_s, x_test_s = stacking(models, x_train, y_train, x_test, 
-                                n_folds=10, shuffle=True, verbose=0, regression=True, seed=1357)
+                                n_folds=10, shuffle=True, verbose=0, regression=True)
 
     # Stacked Second-Layer Model
     # TODO: Test multiple models to be used for second layer stacked model
-    stacked_lr = LinearRegression(n_jobs=-1)
-    stacked_lr = stacked_lr.fit(x_train_s, y_train)
-    print('Stacking R2 Training score: ', stacked_lr.score(x_train_s, y_train))
+    xgb_l2 = XGBRegressor(objective='reg:linear')
+    xgb_l2 = xgb_l2.fit(x_train_s, y_train)
+    print('Stacking XGBRegressor L2 R2 Training score: ', xgb_l2.score(x_train_s, y_train))
 
-    y_pred = stacked_lr.predict(x_train_s)
-    print('Stacking Training MSE: ', metrics.mean_squared_error(y_pred, y_train))
+    y_pred = xgb_l2.predict(x_train_s)
+    print('Stacking XGBRegressor L2 Training MSE: ', metrics.mean_squared_error(y_pred, y_train))
 
-    y_pred = stacked_lr.predict(x_test_s)
-    print('Stacking R2 Test score: ', stacked_lr.score(x_test_s, y_test))
-    print('Stacking Test MSE: ', metrics.mean_squared_error(y_pred, y_test))
+    y_pred = xgb_l2.predict(x_test_s)
+    print('Stacking XGBRegressor L2 R2 Test score: ', xgb_l2.score(x_test_s, y_test))
+    print('Stacking XGBRegressor L2 Test MSE: ', metrics.mean_squared_error(y_pred, y_test))
+
+    try:
+        save_model(xgb_l2, sys.argv[2]) 
+    except IndexError:
+        pass
 
 if __name__ == '__main__':
     main()
