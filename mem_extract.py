@@ -1,6 +1,7 @@
 import subprocess
 import sys
 import json
+from recommendation_global import DEFAULT_FILE_NAME, whitelist_queues
 
 # Subroutine script that obtains the maximum memory allocation per node in each queue
 # Outputs a dictionary of queue to memory mappings, and saves it to a JSON file if run as main script
@@ -8,7 +9,6 @@ import json
 
 """ Global Variables """
 OUTPUT_FILE_NAME = 'mem_default.json'
-whitelist_queues = ['parallel8', 'parallel12', 'parallel20', 'parallel24', 'serial', 'short', 'gpu', 'volta_gpu']
 
 def get_mem_default(mem_extract):
     try:

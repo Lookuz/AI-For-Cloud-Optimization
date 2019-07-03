@@ -18,28 +18,45 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-import timeit
+import time
+import io
 
 
 # Recommandation routine to be executed
-def main(job_script):
+def main(job_script, verbose=False):
+
+    if not verbose:
+        sys.stdout = io.StringIO() # Suppress messages from modules 
+
     # Extract resource values from script
+    start_time = time.time()
     job_info = job_script_process.parse_job_script(job_script)
     job_df = ai_cloud_etl.to_dataframe(job_info)
+    job_process_elapsed = time.time() - start_time
     
     # Load queue/dept encodings 
+    start_time = time.time()
     dept_encoder, queue_encoder = ai_cloud_etl.load_labels()
+    encoding_elapsed = time.time() - start_time
     
     # Perform feature engineering and transformation
+    start_time = time.time()
     job_df = ai_cloud_etl.feature_transform(job_df, queue_encoder=queue_encoder, dept_encoder=dept_encoder)
+    feature_transform_elapsed = time.time() - start_time
     
     # Load models
+    start_time = time.time()
     models = ai_cloud_model.load_models()
     l2_model = ai_cloud_model.load_model(model_name='l2') # NOTE: Decide on L2 model
+    load_models_elapsed = time.time() - start_time
+
+    sys.stdout = sys.__stdout__ # restore stdout
 
     # Get CPU recommendation
+    start_time = time.time()
     estimated_cores = ai_cloud_model.l2_predict(models=models, l2_model=l2_model, x=job_df) # estimated CPU prediction
     select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=job_info['queue'])
+    prediction_elapsed = time.time() - start_time
     memory = job_info[MEM_KEY]
 
     # Prompt for recommended job script
@@ -63,6 +80,11 @@ def main(job_script):
             print('Please enter \'y\' or \'n\'.')
             continue
 
+    print('Job scripting processing time:', job_process_elapsed)
+    print('Loading encodings time:', encoding_elapsed)
+    print('Feature transformation time:', feature_transform_elapsed)
+    print('Model loading time:', load_models_elapsed)
+    print('Prediction time:', prediction_elapsed)
     return 0
 
 

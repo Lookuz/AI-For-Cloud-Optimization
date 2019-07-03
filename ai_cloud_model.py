@@ -1,5 +1,6 @@
 import numpy as np
 import sys
+import io
 from ai_cloud_etl import save_data, load_data
 from itertools import chain
 from sklearn import preprocessing
@@ -72,12 +73,10 @@ def load_model(model_name=None, model_file=None):
         return model
     except FileNotFoundError:
         print('Specified file not found')
-        pass
     except KeyError:
         print('Specified model alias is not valid')
         print('Valid model_name arguments: ')
         print(model_list)
-        pass
     
     try:
         print('Loading default settings for', model_name)

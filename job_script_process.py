@@ -73,7 +73,7 @@ def generate_recommendation(select, ncpus, memory, queue, job_script):
                     ncpus = floor(ncpus) 
                 output_line = output_line + NCPUS_PREFIX + str(ncpus) + ':'
                 # TODO: Memory formatting
-                output_line = output_line + MEM_PREFIX + str(memory)
+                output_line = output_line + MEM_PREFIX + str(memory) # TODO: Conversion function for memory to handle multiple types
                 out_file.write(output_line + '\n')
 
             else:
