@@ -6,7 +6,7 @@ import user2dept
 from math import floor
 from datetime import timedelta
 from preproc import convert_mem
-from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY
+from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY, DEFAULT_QUEUE
 
 # Python subroutine script that takes in a PBS job script as a command line argument
 # Processes the job script by extracting necessary lines as features, and returning a serializable object 
@@ -71,9 +71,9 @@ def generate_recommendation(select, ncpus, memory, queue, job_script):
                 output_line = output_line + SELECT_PREFIX + str(select) + ':'
                 if type(ncpus) is float: # Round floating CPUs down
                     ncpus = floor(ncpus) 
-                output_line = output_line + NCPUS_PREFIX + str(ncpus) + ':'
+                output_line = output_line + NCPUS_PREFIX + str(int(ncpus)) + ':'
                 # TODO: Memory formatting
-                output_line = output_line + MEM_PREFIX + str(memory) # TODO: Conversion function for memory to handle multiple types
+                output_line = output_line + MEM_PREFIX + str(memory)
                 out_file.write(output_line + '\n')
 
             else:
@@ -82,7 +82,7 @@ def generate_recommendation(select, ncpus, memory, queue, job_script):
     return output_file
 
 
-# Main function for subroutine
+# Functin that takes in a job script, and extracts the necessary information required for recommendation of resources
 def parse_job_script(job_script, save=False):
     with open(job_script, 'r') as infile, open(DEFAULT_FILE_NAME, 'r') as default_file:
         defaults = json.load(default_file)
@@ -95,6 +95,7 @@ def parse_job_script(job_script, save=False):
             queue = queue[0].replace(QUEUE_PREFIX, '').strip()
             job_info[QUEUE_KEY] = queue
         except IndexError:
+            job_info[QUEUE_KEY] = DEFAULT_QUEUE
             pass
 
         # Extract ncpus, mem, mpiprocs
@@ -144,7 +145,7 @@ def parse_job_script(job_script, save=False):
             user_id = subprocess.check_output(['id']).decode('ascii') # get user id using the linux 'id' command
             user_id = user_id.split()
             user_id = [s for s in user_id if 'uid' in s]
-            user_id = re.search('\(([^)]+)', user_id[0]).group(1) # get user id withinn brackets
+            user_id = re.search('\(([^)]+)', user_id[0]).group(1) # get user id within brackets
             job_info['user_id'] = user_id
             dept_dict = user2dept.load_mapping(DEPT_FILE_NAME) # Load mappings for user to dept
             dept = user2dept.search(dept_dict, user_search=user_id)
@@ -158,7 +159,7 @@ def parse_job_script(job_script, save=False):
         return job_info
 
 
-if __name__ == '____parse_job_script____':
+if __name__ == '__main__':
     try:
         job_script = sys.argv[1]
         save = False

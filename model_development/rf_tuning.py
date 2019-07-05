@@ -9,8 +9,8 @@ from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSe
 from sklearn.ensemble import RandomForestRegressor
 from skopt import gp_minimize, dump, load
 
-RES_FILE_NAME = 'mem_prediction/rf_bo_res.z'
-MODEL_FILE_NAME = 'mem_prediction/rf.pkl'
+RES_FILE_NAME = 'rf_bo_res.z'
+MODEL_FILE_NAME = 'rf.pkl'
 
 param_grid = [
     (50, 500), # n_estimators
@@ -126,11 +126,11 @@ if __name__ == '__main__':
     # Data Transformation and Engineering
     df = feature_eng(df)
     df = extract_queues(df)
-    dept_encoder, queue_encoder = fit_labels(df)
-    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder)
+    dept_encoder, queue_encoder, user_encoder = fit_labels(df)
+    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder, user_encoder=user_encoder)
 
     # Training/Test Split
-    x, y = data_filter(df, mem=True)
+    x, y = data_filter(df)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
 
     # RandomForestRegressor

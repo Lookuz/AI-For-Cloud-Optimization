@@ -2,8 +2,12 @@
 # Routine and subroutine scripts for resource recommendation
 
 DEFAULT_FILE_NAME = 'queue_default.json' # File to save queue default parameters to
+DEFAULT_QUEUE = 'short'
 whitelist_queues = ['parallel8', 'parallel12', 'parallel20', 'parallel24', 'serial', 'short', 'gpu', 'volta_gpu']
 DEPT_FILE_NAME = 'user_dept.txt' # File to get user to dept mappings
+
+# Blacklist queues - Don't recommend queues for jobs submitted to these queues
+blacklist_queues = ['short', 'serial']
 
 # Prediction parameters
 CPU_KEY = 'Resource_List.ncpus'

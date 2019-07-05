@@ -9,6 +9,10 @@ from recommendation_global import QUEUE_EXTRACT, MEM_EXTRACT, DEFAULT_FILE_NAME,
 # Script that approximates the current load of each queue based on current job statistics per queue
 # TODO: define load metric
 
+""" Global Variables """
+DEFAULT_SELECT = 1
+DEFAULT_NCPU = 1
+
 # Loads the default parameters and values for each of the queues
 def load_defaults():
     if (not os.path.exists(DEFAULT_FILE_NAME)): # Default file missing, run queue_extract subroutine
@@ -42,8 +46,8 @@ def recommend_cpu(est_cpu, queue):
                 select = ceil(select)
 
             return select, min_cpu
-    except KeyError as e: # TODO: handle missing values
-        pass
+    except KeyError as e: # Default to 1 node and 1 core
+        return DEFAULT_SELECT, DEFAULT_NCPU
 
 
 # Function that evaluates the efficiency of using a queue if a job script is assigned to it

@@ -11,7 +11,7 @@ import ai_cloud_model
 import queue_extract
 import queue_recommendation
 import job_script_process
-from recommendation_global import MEM_KEY
+from recommendation_global import MEM_KEY, blacklist_queues
 
 # Imported libraries
 import sys
@@ -23,7 +23,7 @@ import io
 
 
 # Recommandation routine to be executed
-def main(job_script, verbose=False):
+def main(job_script, verbose=False, _time=False):
 
     if not verbose:
         sys.stdout = io.StringIO() # Suppress messages from modules 
@@ -36,12 +36,12 @@ def main(job_script, verbose=False):
     
     # Load queue/dept encodings 
     start_time = time.time()
-    dept_encoder, queue_encoder = ai_cloud_etl.load_labels()
+    dept_encoder, queue_encoder, user_encoder = ai_cloud_etl.load_labels()
     encoding_elapsed = time.time() - start_time
     
     # Perform feature engineering and transformation
     start_time = time.time()
-    job_df = ai_cloud_etl.feature_transform(job_df, queue_encoder=queue_encoder, dept_encoder=dept_encoder)
+    job_df = ai_cloud_etl.feature_transform(job_df, queue_encoder=queue_encoder, dept_encoder=dept_encoder, user_encoder=user_encoder)
     feature_transform_elapsed = time.time() - start_time
     
     # Load models
@@ -54,8 +54,9 @@ def main(job_script, verbose=False):
 
     # Get CPU recommendation
     start_time = time.time()
+    queue = job_info['queue']
     estimated_cores = ai_cloud_model.l2_predict(models=models, l2_model=l2_model, x=job_df) # estimated CPU prediction
-    select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=job_info['queue'])
+    select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=queue)
     prediction_elapsed = time.time() - start_time
     memory = job_info[MEM_KEY]
 
@@ -64,11 +65,13 @@ def main(job_script, verbose=False):
     print('Recommended number of nodes:', select)
     print('Recommended number of CPUs(per node):', recommended_cores)
     print('Total recommended number of CPUs:', select * recommended_cores)
-    while True:
-        print('Get additional queue recommendation for provided job script[y/n]?')
-        response = str(input())
+    while True and (queue not in blacklist_queues):
+        response = str(input('Get additional queue recommendation for provided job script[y/n]?'))
         if response == 'y':
-            queue, (select, recommended_cores) = queue_recommendation.recommend_all(est_cpu=estimated_cores) # NOTE: Provide custom evaluation metric if needed 
+            queue, (select, recommended_cores) = queue_recommendation.recommend_all(est_cpu=estimated_cores) # NOTE: Provide custom evaluation metric if needed
+            print('Queue recommended:', queue)
+            print('Recommended number of nodes:', select)
+            print('Recommended number of CPUs(per node):', recommended_cores)
             output_file = job_script_process.generate_recommendation(select=select, ncpus=recommended_cores, memory=memory, queue=queue, job_script=job_script)
             print('Recommended job script saved to', output_file)
             break
@@ -80,20 +83,29 @@ def main(job_script, verbose=False):
             print('Please enter \'y\' or \'n\'.')
             continue
 
-    print('Job scripting processing time:', job_process_elapsed)
-    print('Loading encodings time:', encoding_elapsed)
-    print('Feature transformation time:', feature_transform_elapsed)
-    print('Model loading time:', load_models_elapsed)
-    print('Prediction time:', prediction_elapsed)
+    if _time: # Output runtimes of each code segment to evaluate performance of script
+        print('Job scripting processing time:', job_process_elapsed)
+        print('Loading encodings time:', encoding_elapsed)
+        print('Feature transformation time:', feature_transform_elapsed)
+        print('Model loading time:', load_models_elapsed)
+        print('Prediction time:', prediction_elapsed)
+
     return 0
 
 
 if __name__ == '__main__':
     try:
         job_script = sys.argv[1]
+        verbose = False
+        _time = False
         if os.path.exists(job_script): # Check if path exists
             if os.path.isfile(job_script): # Check file provided is not directory
-                main(job_script)
+                if len(sys.argv) >= 3 and sys.argv[2] == 'verbose':
+                    verbose = True
+                if len(sys.argv) >= 4 and sys.argv[3] == 'time':
+                    _time = True
+
+                main(job_script, verbose=verbose, _time=_time)
             else:
                 print('File provided is not valid')
                 sys.exist(-3)

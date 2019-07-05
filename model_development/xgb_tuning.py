@@ -9,8 +9,8 @@ from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSe
 from xgboost import XGBRegressor
 from skopt import gp_minimize, dump, load
 
-RES_FILE_NAME = 'mem_prediction/xgb_bo_res.z'
-MODEL_FILE_NAME = 'mem_prediction/xgb.pkl'
+RES_FILE_NAME = 'xgb_bo_res.z'
+MODEL_FILE_NAME = 'xgb.pkl'
 
 # Parameter grid for Bayesian Optimization hyperparameter tuning
 param_grid = [
@@ -150,11 +150,11 @@ if __name__ == '__main__':
     # Data Transformation and Engineering
     df = feature_eng(df)
     df = extract_queues(df)
-    dept_encoder, queue_encoder = fit_labels(df)
-    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder)
+    dept_encoder, queue_encoder, user_encoder = fit_labels(df)
+    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder, user_encoder=user_encoder, train=True)
 
     # Training/Test Split
-    x, y = data_filter(df, mem=True)
+    x, y = data_filter(df)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
 
     # XGBoost

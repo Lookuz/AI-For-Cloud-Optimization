@@ -16,7 +16,7 @@ whitelist_cols_e = ['Resource_List.ncpus', 'Resource_List.mem', 'resources_used.
                       'resources_used.mem', 'dept', 'resources_used.walltime', 'Resource_List.mpiprocs', 
                   'job_id', 'user']
 whitelist_cols_q = ['job_id', 'datetime']
-whitelist_cols_x = ['Resource_List.ncpus', 'Resource_List.mem', 'queue', 'dept', 
+whitelist_cols_x = ['Resource_List.ncpus', 'Resource_List.mem', 'queue', 'dept', # TODO: include user after dept
                         'Resource_List.mpiprocs']
 whitelist_cols_y = ['estimated_cores_used_eng']
 whitelist_cols_y_mem = ['resources_used.mem']
@@ -25,6 +25,7 @@ whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short',
 
 QUEUE_ENCODING = 'queue_encoder.pkl'
 DEPT_ENCODING = 'dept_encoder.pkl'
+USER_ENCODING = 'user_encoder.pkl'
 
 # Extracts the necessary columns from the dataset
 def extract_cols(df, whitelist_cols):
@@ -57,19 +58,22 @@ def feature_eng(df):
     
     return df
 
-# Load labels for LabelEncoder objects
+# Creates LabelEncoders for the categorical features in the dataset
+# Returns encodings for dept, queue and user
 def fit_labels(df):
-    dept_encoder = preprocessing.LabelEncoder() # Encoding for the dept attribute: Perform fit_labels function to load labels
-    queue_encoder = preprocessing.LabelEncoder() #Encoding for the queue attribute: Perform fit_labels funciton to load labels
+    dept_encoder = preprocessing.LabelEncoder()  
+    queue_encoder = preprocessing.LabelEncoder()
+    user_encoder = preprocessing.LabelEncoder()
    
     # Fit categorical attributes into numerical labels
     dept_encoder.fit(df['dept'])
     queue_encoder.fit(df['queue'])
+    user_encoder.fit(bin_users(df)) # Bin users that submitted jobs below threshold to others
 
-    return dept_encoder, queue_encoder
+    return dept_encoder, queue_encoder, user_encoder
 
 # Function that performs the necessary transformation on the data
-def feature_transform(df, queue_encoder, dept_encoder):
+def feature_transform(df, queue_encoder, dept_encoder, user_encoder, train=False):
     # Requested memory scaling
     # Requested memory observed to have long tail distribution
     # Use logarithmic scaling
@@ -90,7 +94,14 @@ def feature_transform(df, queue_encoder, dept_encoder):
         df['queue'] = queue_encoder.transform(df['queue'])
     if 'dept' in df.columns:
         df['dept'] = dept_encoder.transform(df['dept'])
-    
+    if 'user' in df.columns:
+        if train: # Bin users based on jobs submitted threshold
+            df['user'] = bin_users(df)
+        else: # Generalize new users to 'others' category
+            df['user'] = df['user'].apply(lambda x: x if x in user_encoder.classes_ else 'others')
+
+        df['user'] = user_encoder.transform(df['user'])
+
     return df
 
 # Function that extracts only data from the e queue
@@ -158,19 +169,33 @@ def load_data(file_name):
 # Loads existing queue_encoder and dept_encoder labels if files are present
 # If optional argument of DataFrame object is given, LabelEncoder objects will be fitted using the given DataFrame
 # if the encoding files are not found, else new LabelEncoder objects will be returned in place
-def load_labels(dept_encodings=None, queue_encodings=None, df=None):
+def load_labels(dept_encodings=None, queue_encodings=None, user_encodings=None, df=None):
+    
+    if dept_encodings is None:
+        dept_encodings = DEPT_ENCODING
+    if queue_encodings is None:
+        queue_encodings = QUEUE_ENCODING
+    if user_encodings is None:
+        user_encodings = USER_ENCODING
+    
     try:
-        if dept_encodings is None:
-            dept_encodings = DEPT_ENCODING
-        if queue_encodings is None:
-            queue_encodings = QUEUE_ENCODING
-            
         queue_encoder = load_data(queue_encodings)
-        dept_encoder = load_data(dept_encodings)
-        return dept_encoder, queue_encoder
     except FileNotFoundError:
-        return fit_labels(df) if df is not None else (preprocessing.LabelEncoder(), preprocessing.LabelEncoder())
+        queue_encoder = preprocessing.LabelEncoder()
 
+    try:
+        dept_encoder = load_data(dept_encodings)
+    except FileNotFoundError:
+        dept_encoder = preprocessing.LabelEncoder()
+    
+    try:
+        user_encoder = load_data(user_encodings)
+    except FileNotFoundError:
+        user_encoder = preprocessing.LabelEncoder()
+
+    return dept_encoder, queue_encoder, user_encoder
+
+    
 # Function that takes in a dictionary containing the feature to value mappings
 # Returns a DataFrame containing the specified features and it's values in the correct order
 # Order: ncpus | mem | queue | dept | mpiprocs
@@ -198,3 +223,11 @@ def to_dataframe_manual(ncpus, mem, queue, dept, mpiprocs):
     }
 
     return to_dataframe(data)
+
+# Function that bins users in a DataFrame to the 'others' category
+# if the number of programs/jobs the user has submitted is less than then threshold
+def bin_users(df):
+    threshold = 3 # Threshold to bin users that submit under this number of jobs to 'others'
+
+    user_count = df['user'].value_counts().to_dict() # Get count of how many jobs user has submitted
+    return df['user'].apply(lambda x: x if user_count[x] > threshold else 'others')

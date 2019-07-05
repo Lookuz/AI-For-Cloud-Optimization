@@ -9,8 +9,8 @@ from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSe
 from sklearn.svm import SVR
 from skopt import gp_minimize, dump, load
 
-RES_FILE_NAME = 'mem_prediction/svr_bo_res.z'
-MODEL_FILE_NAME = 'mem_prediction/svr.pkl'
+RES_FILE_NAME = 'svr_bo_res.z'
+MODEL_FILE_NAME = 'svr.pkl'
 
 # Parameter grid for Bayesian Optimization hyperparameter tuning
 param_grid = [
@@ -126,18 +126,18 @@ if __name__ == '__main__':
     # Data Transformation and Engineering
     df = feature_eng(df)
     df = extract_queues(df)
-    dept_encoder, queue_encoder = fit_labels(df)
-    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder)
-    df = df[:100000] # take only 100k rows
+    dept_encoder, queue_encoder, user_encoder = fit_labels(df)
+    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder, user_encoder=user_encoder)
+    df = df[:250000] # take only 250 rows
 
     # Training/Test Split
-    x, y = data_filter(df, mem=True)
+    x, y = data_filter(df)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=2468)
 
     # SVR RBF Kernel
     
     # Hyperparameter tuning
-    # res = bayes_opt(objective_func=objective_func, param_grid=param_grid)
+    res = bayes_opt(objective_func=objective_func, param_grid=param_grid)
 
     svr_rbf = load_model(hyperparams_file=RES_FILE_NAME)
     svr_rbf = svr_rbf.fit(x_train, y_train)

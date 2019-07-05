@@ -1,6 +1,5 @@
 import numpy as np
 import sys
-import io
 from ai_cloud_etl import save_data, load_data
 from itertools import chain
 from sklearn import preprocessing
