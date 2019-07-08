@@ -169,7 +169,7 @@ def load_data(file_name):
 # Loads existing queue_encoder and dept_encoder labels if files are present
 # If optional argument of DataFrame object is given, LabelEncoder objects will be fitted using the given DataFrame
 # if the encoding files are not found, else new LabelEncoder objects will be returned in place
-def load_labels(dept_encodings=None, queue_encodings=None, user_encodings=None, df=None):
+def load_labels(dept_encodings=None, queue_encodings=None, user_encodings=None):
     
     if dept_encodings is None:
         dept_encodings = DEPT_ENCODING
@@ -180,7 +180,7 @@ def load_labels(dept_encodings=None, queue_encodings=None, user_encodings=None, 
     
     try:
         queue_encoder = load_data(queue_encodings)
-    except FileNotFoundError:
+    except FileNotFoundError: 
         queue_encoder = preprocessing.LabelEncoder()
 
     try:

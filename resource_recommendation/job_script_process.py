@@ -83,7 +83,7 @@ def generate_recommendation(select, ncpus, memory, queue, job_script):
 
 
 # Functin that takes in a job script, and extracts the necessary information required for recommendation of resources
-def parse_job_script(job_script, save=False):
+def parse_job_script(job_script, save=False, _id=None):
     with open(job_script, 'r') as infile, open(DEFAULT_FILE_NAME, 'r') as default_file:
         defaults = json.load(default_file)
         job_file = infile.read().split('\n')
@@ -138,11 +138,14 @@ def parse_job_script(job_script, save=False):
         except IndexError: # Missing line
             print('Error parsing job script')
             print('Format for job script is invalid')
-            pass
+            return None
 
         # Get dept
         try:
-            user_id = subprocess.check_output(['id']).decode('ascii') # get user id using the linux 'id' command
+            if _id is None:
+                user_id = subprocess.check_output(['id']).decode('ascii') # get user id using the linux 'id' command
+            else:
+                user_id = _id
             user_id = user_id.split()
             user_id = [s for s in user_id if 'uid' in s]
             user_id = re.search('\(([^)]+)', user_id[0]).group(1) # get user id within brackets

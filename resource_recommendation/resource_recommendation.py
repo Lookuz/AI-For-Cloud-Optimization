@@ -20,13 +20,31 @@ import pandas as pd
 import numpy as np
 import time
 import io
+import argparse
 
+# Command line argument options
+OPT_JOB_SCRIPT = 'job_script'
+OPT_VERBOSE_LONG = '--verbose'
+OPT_VERBOSE_SHORT = '-v'
+OPT_TIME_LONG = '--time'
+OPT_TIME_SHORT = '-t'
+
+# Function that initializes a command line argument parser for the script
+# Returns a argparser.ArgumentParser object with the necessary command line arguments to be taken in
+def init_parser():
+    parser = argparse.ArgumentParser(description='Arguments for resource recommendation')
+    parser.add_argument(OPT_JOB_SCRIPT, type=str, help='Job script to be processed for resource recommendation', nargs='?', default=None)
+    parser.add_argument(OPT_VERBOSE_LONG, OPT_VERBOSE_SHORT, action='store_true', help='Displays full message log for resource recommendation')
+    parser.add_argument(OPT_TIME_LONG, OPT_TIME_SHORT, action='store_true', help='Displays the time taken for each section that is run in the resource recommendation script')
+
+    return parser
 
 # Recommandation routine to be executed
 def main(job_script, verbose=False, _time=False):
 
     if not verbose:
         sys.stdout = io.StringIO() # Suppress messages from modules 
+        sys.stderr = io.StringIO() # Suppress warning messages
 
     # Extract resource values from script
     start_time = time.time()
@@ -51,6 +69,7 @@ def main(job_script, verbose=False, _time=False):
     load_models_elapsed = time.time() - start_time
 
     sys.stdout = sys.__stdout__ # restore stdout
+    sys.stderr = sys.__stderr__ # restore stderr
 
     # Get CPU recommendation
     start_time = time.time()
@@ -58,30 +77,31 @@ def main(job_script, verbose=False, _time=False):
     estimated_cores = ai_cloud_model.l2_predict(models=models, l2_model=l2_model, x=job_df) # estimated CPU prediction
     select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=queue)
     prediction_elapsed = time.time() - start_time
-    memory = job_info[MEM_KEY]
+    memory = int(job_info[MEM_KEY]) # TODO: Conversion of memory
 
     # Prompt for recommended job script
     # To do bounding: cannot be lower than queue min/ higher than queue max
     print('Recommended number of nodes:', select)
     print('Recommended number of CPUs(per node):', recommended_cores)
     print('Total recommended number of CPUs:', select * recommended_cores)
-    while True and (queue not in blacklist_queues):
-        response = str(input('Get additional queue recommendation for provided job script[y/n]?'))
+    while queue not in blacklist_queues:
+        response = str(input('Get additional queue recommendation for provided job script[y/n]? '))
         if response == 'y':
             queue, (select, recommended_cores) = queue_recommendation.recommend_all(est_cpu=estimated_cores) # NOTE: Provide custom evaluation metric if needed
             print('Queue recommended:', queue)
             print('Recommended number of nodes:', select)
             print('Recommended number of CPUs(per node):', recommended_cores)
-            output_file = job_script_process.generate_recommendation(select=select, ncpus=recommended_cores, memory=memory, queue=queue, job_script=job_script)
-            print('Recommended job script saved to', output_file)
             break
         elif response == 'n':
-            output_file = job_script_process.generate_recommendation(select=select, ncpus=recommended_cores, memory=memory, queue=queue, job_script=job_script)
-            print('Recommended job script saved to', output_file)
+            print('Using current queue:', queue)
             break
         else:
             print('Please enter \'y\' or \'n\'.')
             continue
+
+    # Write out recommended job script file
+    output_file = job_script_process.generate_recommendation(select=select, ncpus=recommended_cores, memory=memory, queue=queue, job_script=job_script)
+    print('Recommended job script saved to', output_file)
 
     if _time: # Output runtimes of each code segment to evaluate performance of script
         print('Job scripting processing time:', job_process_elapsed)
@@ -94,28 +114,25 @@ def main(job_script, verbose=False, _time=False):
 
 
 if __name__ == '__main__':
-    try:
-        job_script = sys.argv[1]
-        verbose = False
-        _time = False
-        if os.path.exists(job_script): # Check if path exists
-            if os.path.isfile(job_script): # Check file provided is not directory
-                if len(sys.argv) >= 3 and sys.argv[2] == 'verbose':
-                    verbose = True
-                if len(sys.argv) >= 4 and sys.argv[3] == 'time':
-                    _time = True
 
-                main(job_script, verbose=verbose, _time=_time)
-            else:
-                print('File provided is not valid')
-                sys.exist(-3)
+    parser = init_parser()
+    args = parser.parse_args()
+    job_script = args.job_script
+    verbose = args.verbose
+    _time = args.time
+
+    if job_script is None:
+        print('Invalid format. Job script to be processed is not provided')
+        parser.print_help(sys.stderr)
+        sys.exit(-3)
+
+    if os.path.exists(job_script): # Check if path exists
+        if os.path.isfile(job_script): # Check file provided is not directory
+            main(job_script, verbose=verbose, _time=_time)
         else:
-            print('Job script provided does not exist')
-            print('Please ensured that the file name and path are correct')
-            sys.exit(-1)
-
-    except IndexError: # No command line argument specified
-        print('Invalid format. One or more command line arguments are missing')
-        print('Run the script using the following format:')
-        print('python3', sys.argv[0], '<job_script.pbs>')
-        sys.exit(-2)
+            print('File provided is not valid')
+            sys.exist(-2)
+    else:
+        print('Job script provided does not exist')
+        print('Please ensured that the file name and path are correct')
+        sys.exit(-1)

@@ -4,10 +4,9 @@ import sys
 import json
 from math import ceil, floor, log
 import queue_extract
-from recommendation_global import QUEUE_EXTRACT, MEM_EXTRACT, DEFAULT_FILE_NAME, DEFAULT_CPU, MIN_CHUNK
+from recommendation_global import QUEUE_EXTRACT, MEM_EXTRACT, DEFAULT_FILE_NAME, DEFAULT_CPU, MIN_CHUNK, MAX_CPU
 
 # Script that approximates the current load of each queue based on current job statistics per queue
-# TODO: define load metric
 
 """ Global Variables """
 DEFAULT_SELECT = 1
@@ -36,6 +35,15 @@ def recommend_cpu(est_cpu, queue):
 
         if est_cpu - min_cpu < 0:
             return 1, min_cpu
+
+        # Place upper bound on predicted CPU using max_cpu setting of queue if present
+        try: 
+            max_cpu = q_default[queue][MAX_CPU]
+            if est_cpu > max_cpu:
+                return int(max_cpu/min_cpu), min_cpu
+        except KeyError:
+            pass
+
         else:
             threshold = 0.2 # threshold for rounding down instead of up. If node efficiency for the last node is less than this value, the node is not assigned
             select = est_cpu/float(min_cpu)
