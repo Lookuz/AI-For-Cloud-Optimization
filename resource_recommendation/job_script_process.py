@@ -6,7 +6,7 @@ import user2dept
 from math import floor
 from datetime import timedelta
 from preproc import convert_mem
-from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY, DEFAULT_QUEUE
+from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY, USER_KEY, DEFAULT_QUEUE
 
 # Python subroutine script that takes in a PBS job script as a command line argument
 # Processes the job script by extracting necessary lines as features, and returning a serializable object 
@@ -149,10 +149,10 @@ def parse_job_script(job_script, save=False, _id=None):
             user_id = user_id.split()
             user_id = [s for s in user_id if 'uid' in s]
             user_id = re.search('\(([^)]+)', user_id[0]).group(1) # get user id within brackets
-            job_info['user_id'] = user_id
+            job_info[USER_KEY] = user_id
             dept_dict = user2dept.load_mapping(DEPT_FILE_NAME) # Load mappings for user to dept
             dept = user2dept.search(dept_dict, user_search=user_id)
-            job_info['dept'] = dept
+            job_info[DEPT_KEY] = dept
         except IndexError:
             print('uid not found')
         

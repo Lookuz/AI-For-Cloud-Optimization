@@ -2,6 +2,7 @@ import numpy as np
 import sys
 from ai_cloud_etl import save_data, load_data
 from itertools import chain
+from recommendation_global import FILE_CB, FILE_GBR, FILE_RF, FILE_SVR, FILE_XGB, FILE_CB_L2, FILE_XGB_L2, FILE_LR_L2
 from sklearn import preprocessing
 from sklearn import metrics
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
@@ -10,6 +11,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
 from catboost import CatBoostRegressor
+from skopt import gp_minimize, dump, load
 
 # Module that provides operations that support model development, testing, tuning and prediction
 
@@ -21,13 +23,6 @@ DEFAULT_XGB = XGBRegressor(objective='reg:linear', n_estimators=100, learning_ra
 DEFAULT_CB = CatBoostRegressor()
 DEFAULT_GBR = GradientBoostingRegressor()
 
-# Model file names
-FILE_RF = 'rf.pkl'
-FILE_SVR = 'svr.pkl'
-FILE_XGB = 'xgb.pkl'
-FILE_CB = 'cb.pkl'
-FILE_GBR = 'gbr.pkl'
-FILE_L2 = 'lr_l2.pkl'
 
 # Mappings for each model alias to it's respective default model initializations
 model_default_dict = {
@@ -45,7 +40,9 @@ model_file_dict = {
     'xgb': FILE_XGB,
     'cb': FILE_CB,
     'gbr': FILE_GBR,
-    'l2': FILE_L2
+    'lr_l2': FILE_LR_L2,
+    'xgb_l2': FILE_XGB_L2,
+    'cb_l2': FILE_CB_L2
 }
 
 # List of model aliases to be used in stacking
@@ -130,15 +127,16 @@ def save_model(model, model_name=None, file_path=None):
 # extract_cols, feature_eng, feature_transform
 # multi Parameter allows for predictions on dataset x where x has more than 1 row. Else, l2_predict function only
 # gives the prediction of the first row of data even if multiple rows are provided in x.
+# NOTE: Format for return is dependent on the L2 model used
 def l2_predict(l2_model, models, x, multi=False):
     x_s = feature_stack(models, x)
     if x_s is None:
         return
     
     if multi is True: # predict all rows in dataset x
-        return list(chain(*l2_model.predict(x_s).tolist()))
+        return l2_model.predict(x_s).tolist()
     else:
-        return l2_model.predict(x_s[:1,:]).tolist()[0][0] # Both return values are in numpy array format
+        return l2_model.predict(x_s[:1,:]).tolist()[0] # Both return values are in numpy array format
 
 
 # Function that takes in first level transformed data x,
@@ -164,3 +162,15 @@ def feature_stack(models, x):
             x_s = np.c_[x_s, l1_pred]
         
     return x_s
+
+# Tunes the hyperparameters in a grid using Bayesian Optimization
+# Uses the skopt library's gp_minimize to search for the optimal hyperparameters
+# Returns the result of the optimization (object)
+# NOTE: The objective function to be minimized(e.g loss function) must be provided
+def bayes_opt(objective_func, param_grid, res_file):
+    res = gp_minimize(objective_func, param_grid, n_jobs=-1, acq_func='EI', n_calls=100, verbose=False)
+
+    print('Best Hyperparameters MSE: ', res.fun)
+    dump(res, res_file) # Save results of hyperparameter tuning
+    
+    return res

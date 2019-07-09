@@ -16,12 +16,12 @@ whitelist_cols_e = ['Resource_List.ncpus', 'Resource_List.mem', 'resources_used.
                       'resources_used.mem', 'dept', 'resources_used.walltime', 'Resource_List.mpiprocs', 
                   'job_id', 'user']
 whitelist_cols_q = ['job_id', 'datetime']
-whitelist_cols_x = ['Resource_List.ncpus', 'Resource_List.mem', 'queue', 'dept', # TODO: include user after dept
+whitelist_cols_x = ['Resource_List.ncpus', 'Resource_List.mem', 'queue', 'dept', 'user',
                         'Resource_List.mpiprocs']
 whitelist_cols_y = ['estimated_cores_used_eng']
 whitelist_cols_y_mem = ['resources_used.mem']
 whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short', 
-                        'parallel24', 'openmp', 'serial']
+                        'parallel24', 'openmp']
 
 QUEUE_ENCODING = 'queue_encoder.pkl'
 DEPT_ENCODING = 'dept_encoder.pkl'
@@ -205,6 +205,7 @@ def to_dataframe(data):
         recommendation_global.MEM_KEY,
         recommendation_global.QUEUE_KEY,
         recommendation_global.DEPT_KEY,
+        recommendation_global.USER_KEY,
         recommendation_global.MPIPROC_KEY
     ]
     df = pd.DataFrame(data, index=[0])
@@ -213,12 +214,13 @@ def to_dataframe(data):
     return df
 
 # Auxiliary function of to_dataframe that takes in individual values
-def to_dataframe_manual(ncpus, mem, queue, dept, mpiprocs):
+def to_dataframe_manual(ncpus, mem, queue, dept, user, mpiprocs):
     data = {
         recommendation_global.CPU_KEY : ncpus,
         recommendation_global.MEM_KEY : mem,
         recommendation_global.QUEUE_KEY : queue,
         recommendation_global.DEPT_KEY : dept,
+        recommendation_global.USER_KEY: user,
         recommendation_global.MPIPROC_KEY : mpiprocs
     }
 

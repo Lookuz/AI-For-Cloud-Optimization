@@ -65,7 +65,7 @@ def main(job_script, verbose=False, _time=False):
     # Load models
     start_time = time.time()
     models = ai_cloud_model.load_models()
-    l2_model = ai_cloud_model.load_model(model_name='l2') # NOTE: Decide on L2 model
+    l2_model = ai_cloud_model.load_model(model_name='xgb_l2')
     load_models_elapsed = time.time() - start_time
 
     sys.stdout = sys.__stdout__ # restore stdout
@@ -77,7 +77,7 @@ def main(job_script, verbose=False, _time=False):
     estimated_cores = ai_cloud_model.l2_predict(models=models, l2_model=l2_model, x=job_df) # estimated CPU prediction
     select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=queue)
     prediction_elapsed = time.time() - start_time
-    memory = int(job_info[MEM_KEY]) # TODO: Conversion of memory
+    memory = int(job_info[MEM_KEY])
 
     # Prompt for recommended job script
     # To do bounding: cannot be lower than queue min/ higher than queue max
