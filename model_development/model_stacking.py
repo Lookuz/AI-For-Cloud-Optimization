@@ -2,16 +2,19 @@ import pandas as pd
 import write_csv
 import sys
 from ai_cloud_etl import data_extract_e, data_filter, feature_eng, feature_transform, extract_queues, load_labels, load_data, save_data
+from ai_cloud_model import load_models, bayes_opt
 import numpy as np
 from sklearn import preprocessing
 from sklearn import metrics
-from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
+from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, cross_val_score
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.svm import SVR
 from xgboost import XGBRegressor
+from xgb_tuning import load_model, param_grid
 from catboost import CatBoostRegressor
 from vecstack import stacking
+from skopt import dump, load
 
 # Second layer model that stacks the following 5 different models together:
 # RandomForestRegressor, SVR with RBF Kernel, XGBoost, CatBoost, GradientBoostingRegressor
@@ -65,6 +68,31 @@ model_file_dict = {
 # List of model aliases to be used in stacking
 model_list = ['rf', 'svr', 'xgb', 'cb', 'gbr']
 
+# Objective function to be minimized during Bayesian Optimization
+def objective_func(params):
+    max_depth = params[0]
+    learning_rate = params[1]
+    n_estimators = params[2]
+    subsample = params[3]
+    min_child_weight = params[4]
+    gamma = params[5]
+    reg_alpha = params[6]
+    reg_lambda = params[7]
+
+    xgb = XGBRegressor(
+        max_depth=int(max_depth), 
+        learning_rate=learning_rate,
+        n_estimators=int(n_estimators),
+        subsample=subsample,
+        min_child_weight=min_child_weight,
+        gamma=gamma,
+        reg_alpha=reg_alpha,
+        reg_lambda=reg_lambda,
+        silent=True,
+        nthread=-1)
+
+    return -np.mean(cross_val_score(xgb, x_train_s, y_train, cv=10, n_jobs=-1, scoring='neg_mean_squared_error'))
+
 # Saves the model into a serialized .pkl file 
 # Saves if the appropriate command-line argument is present
 def save_model(model, model_name):
@@ -79,43 +107,23 @@ def save_model(model, model_name):
         print('Save error! Specified model name is invalid')
 
 
-# Function that loads existing model from persistent file first if possible
-# Else, initializes a new model
-def load_model(model_name, model_file=None):
-    if model_file is not None:
-        try:
-            model = load_data(model_file)
-            print('Loaded model from ', model_file)
-            return model
-        except:
-            pass
-    
-    try:
-        print('Loading default settings for ', model_name)
-        return model_default_dict[model_name]
-    except KeyError:
-        print('Invalid model type')
-        return None
-
-def main():
+if __name__ == '__main__':
     # Data Extraction
     df = data_extract_e('e_20190609_15.pkl')
 
     # Data Transformation and Engineering
     df = feature_eng(df)
     df = extract_queues(df)
-    dept_encoder, queue_encoder = load_labels('dept_encoder.pkl', 'queue_encoder.pkl', df=df)
-    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder)
-    df = df[:500000] # Take x number of rows; downscaling dataset due to time constraints
+    dept_encoder, queue_encoder, user_encoder = load_labels()
+    df = feature_transform(df, dept_encoder=dept_encoder, queue_encoder=queue_encoder, user_encoder=user_encoder)
+    df = df[:100000] # Take x number of rows; downscaling dataset due to time constraints
 
     # Training/Test Split
     x, y = data_filter(df)
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1357) # 2468 to use same shuffle as individual models
 
     # Load models from persistent files
-    models = [] # List of model objects for use in stacking
-    for model in model_list:
-        models.append(load_model(model, model_file=model_file_dict[model]))
+    models = load_models()
 
     # Stacking
     # Produces a new set of features based on the predictions of base models
@@ -123,8 +131,20 @@ def main():
                                 n_folds=10, shuffle=True, verbose=0, regression=True)
 
     # Stacked Second-Layer Model
-    # TODO: Test multiple models to be used for second layer stacked model
     xgb_l2 = XGBRegressor(objective='reg:linear')
+    xgb_l2 = xgb_l2.fit(x_train_s, y_train)
+    print('Stacking XGBRegressor L2 R2 Training score: ', xgb_l2.score(x_train_s, y_train))
+
+    y_pred = xgb_l2.predict(x_train_s)
+    print('Stacking XGBRegressor L2 Training MSE: ', metrics.mean_squared_error(y_pred, y_train))
+
+    y_pred = xgb_l2.predict(x_test_s)
+    print('Stacking XGBRegressor L2 R2 Test score: ', xgb_l2.score(x_test_s, y_test))
+    print('Stacking XGBRegressor L2 Test MSE: ', metrics.mean_squared_error(y_pred, y_test))
+
+    # Bayesian Optimization for Hyperparameter Tuning
+    res = bayes_opt(objective_func, param_grid, 'xgb_l2_bo_res.z')
+    xgb_l2 = load_model(hyperparams_file='xgb_l2_bo_res.z')
     xgb_l2 = xgb_l2.fit(x_train_s, y_train)
     print('Stacking XGBRegressor L2 R2 Training score: ', xgb_l2.score(x_train_s, y_train))
 
@@ -139,6 +159,3 @@ def main():
         save_model(xgb_l2, sys.argv[2]) 
     except IndexError:
         pass
-
-if __name__ == '__main__':
-    main()

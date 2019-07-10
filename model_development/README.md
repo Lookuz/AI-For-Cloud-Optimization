@@ -21,8 +21,8 @@ For hyperparameter search and tuning, we have opted to use Bayesian Optimization
 Each model script has a objective function implemented by default to be used with each specific model. When using the model development scripts, it is also possible to provided a custom objective function to be provided for the particular model for use with `skopt`. However, it is important to take note that the objective function is one that should be *minimized* rather than maximizing the results for that combination of hyperparameters.<br>
 By default, the `bayes_opt` function provided in `ai_cloud_model` uses the Expected Improvement(EI) acquisition function and Gaussian Processes. However, it is also possible to use a different acquisition function and other methods of bayesian Optimization(Decision Trees, etc). For more information, please see https://scikit-optimize.github.io/.
 
-====
-#### Note
+---
+### Note
 When developing and tuning the SVR(RBF) model, take note that the time taken is drastically longer than the other models as the size of the training data increases, the time taken for training the SVR model increases quadratically(O(*n<sup>2<sup>*)) due to the fact that SVR needs to compute distance between each data point to identify support vectors. It is recommended to downsize the dataset if the dataset is too large to reduce the training time significantly.
 
-====
+---

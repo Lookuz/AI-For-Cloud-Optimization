@@ -2,12 +2,12 @@ import pandas as pd
 import write_csv
 import sys
 from ai_cloud_etl import data_extract_e, data_filter, feature_eng, feature_transform, extract_queues, fit_labels, save_data, load_data
+from ai_cloud_model import bayes_opt
 import numpy as np
 from sklearn import preprocessing
 from sklearn import metrics
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV, cross_val_score
 from xgboost import XGBRegressor
-from skopt import gp_minimize, dump, load
 
 RES_FILE_NAME = 'xgb_bo_res.z'
 MODEL_FILE_NAME = 'xgb.pkl'
@@ -77,20 +77,6 @@ def save_model(model):
             pass
     except IndexError:
         pass
-
-
-# Tunes the hyperparameters in a grid using Bayesian Optimization
-# Uses the skopt library's gp_minimize to search for the optimal hyperparameters
-# Returns the result of the optimization (object)
-def bayes_opt(objective_func, param_grid):
-    res = gp_minimize(objective_func, param_grid, n_jobs=-1, acq_func='EI', n_calls=100, verbose=False)
-    print('Best Hyperparameters: ')
-    print_hyperparams(res)
-
-    print('Best Hyperparameters MSE: ', res.fun)
-    dump(res, RES_FILE_NAME)
-    
-    return res
 
 
 # Prints the best hyperparameters found from Bayesian Optimization search
@@ -172,7 +158,7 @@ if __name__ == '__main__':
     print('XGBoost Test MSE: ', metrics.mean_squared_error(y_pred, y_test))
 
     # Hyperparameter tuning
-    res = bayes_opt(objective_func, param_grid)
+    res = bayes_opt(objective_func, param_grid, RES_FILE_NAME)
     xgb = load_model(hyperparams_file=RES_FILE_NAME)
     xgb = xgb.fit(x_train, y_train)
     xgb_r2 = xgb.score(x_train, y_train)
