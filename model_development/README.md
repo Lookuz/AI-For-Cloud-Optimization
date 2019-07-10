@@ -26,3 +26,18 @@ By default, the `bayes_opt` function provided in `ai_cloud_model` uses the Expec
 When developing and tuning the SVR(RBF) model, take note that the time taken is drastically longer than the other models as the size of the training data increases, the time taken for training the SVR model increases quadratically(O(*n<sup>2<sup>*)) due to the fact that SVR needs to compute distance between each data point to identify support vectors. It is recommended to downsize the dataset if the dataset is too large to reduce the training time significantly.
 
 ---
+
+#### Stacking
+
+Model script for developing, training and tuning the L2 model is also provided as `model_stacking.py`. `model_stacking.py` requires the base models to already been trained and tuned, as well as saved to a serialized pickle file(e.g `xgb.pkl` for XGBRegressor). These files will be used to load the base models using the `load_models` function in `ai_cloud_model`. Alternatively, it also possible to provided a custom list of L1 models.
+
+The base models are stacked to produce a new set of features using the predictions of the base models. This set of new features are then used as training data for the L2 meta learner model in the script to fit and train on. Similar to the base model scripts, the L2 model is then tuned to find the best hyperparameters using Bayesian Optimization via the SciKit-Optimize library.
+
+Similar to training the SVR(RBF) model, model stacking can take a long time to complete. If the dataset gets large, it is recommended to either downsize the dataset to a reasonable size, or be prepared to wait a long time before results are returned.<br>
+
+---
+### Note
+Additionally, it is possible to also provide custom base L1 models to be used in place of the default models provided in `resource_recommendation/` directory to train the L2 model. However, it is important that the L2 model trained from the L1 models must be used with the same set of base L1 models in the resource recommendation tool as the shape of the stacked features from L1 prediction must match the shape of the fit L2 model.<br>
+Also, It should be noted that if custom L1 models are provided, the models should be fit and trained on the same shape as the dataset of the default base models. 
+
+---
