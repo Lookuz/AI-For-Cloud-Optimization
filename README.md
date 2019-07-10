@@ -28,16 +28,16 @@ The following scripts are auxiliary scripts for data extraction to be used with 
 The follow scripts that bundled together in the `resource_recommendation/` directory, and are used for the prediction and recommendation of resources for a specified job script provided by the user.
 
 - `ai_cloud_etl`: Module that provides operations for data extraction, feature engineering and selection
-- `ai_cloud_model`: Module that contains parameters for loading the overal prediction algorithm, as well as model-related supporting operations
+- `ai_cloud_model`: Module that contains parameters for loading the overall prediction algorithm, as well as model-related supporting operations
 - `job_script_process`: Subroutine script to process the details of a given PBS job script and return the required information on the job
 - `queue_extract`/`mem_extract`: Routine script to obtain the default parameters(CPU, memory) of each queue in the cluster. Using to handle missing values and allocate defaults, or provide upper/lower bounding should values be too high/low
 - `queue_recommendation`: Provides the resource recommendation given the predicted resources, as well as queue recommendation using a self defined metric to select the most optimal queue for the user
 - `recommendation_global`: Module that contains all the global variables and parameters used across model development and resource recommendation tools
 - `resource_recommendation`: Main recommendation script that takes in the job script name from a user, and produces a job script with the recommended resources
 
-### Model Files:
+### Model Files
 
-The models to be used in the prediction algorithm for resource recommendation/prediction are kept in the form of serialized persistent files. Please ensure that all models are loaded into the `resource_recommendation/` directory before prediction can be made.
+The models to be used in the prediction algorithm for resource recommendation/prediction are kept in the form of serialized persistent files. 
 
 - `cb.pkl`: CatBoostRegressor 
 - `xgb.pkl`: XGBRegressor 
@@ -51,7 +51,7 @@ There are also 3 layer-2(L2) models that are available to be used in stacking in
 - `cb_l2.pkl`: L2 CatBoostRegressor
 - `lr_l2.pkl`: L2 LinearRegressor
 
-### Model Development
+## Model Development
 
 The follow scripts are are used in the development, training, testing and tuning of models used in the overall prediction algorithm for resource recommendation in the `model_development/` directory. 
 
@@ -69,6 +69,7 @@ The follow scripts are are used in the development, training, testing and tuning
 - XGBoost(`xgb`): For XGBRegressor model
 - CatBoost(`catboost`): For CatBoostRegressor model
 - SciKit-Optimize(`skopt`): For modules used in hyperparameter tuning using Bayesian Optimization
+- VecStack(`vecstack`): Module for stacking L1 models together to produce L2 model features
 
 To install any missing dependencies, use the following command to install directly as a library in Python:
 
