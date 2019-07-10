@@ -21,6 +21,23 @@ For hyperparameter search and tuning, we have opted to use Bayesian Optimization
 Each model script has a objective function implemented by default to be used with each specific model. When using the model development scripts, it is also possible to provided a custom objective function to be provided for the particular model for use with `skopt`. However, it is important to take note that the objective function is one that should be *minimized* rather than maximizing the results for that combination of hyperparameters.<br>
 By default, the `bayes_opt` function provided in `ai_cloud_model` uses the Expected Improvement(EI) acquisition function and Gaussian Processes. However, it is also possible to use a different acquisition function and other methods of bayesian Optimization(Decision Trees, etc). For more information, please see https://scikit-optimize.github.io/.
 
+The following compressed files have also been provided which contains the results from hyperparameter tuning of each model using Bayesian Optimization through the `skopt` library in Python. 
+
+- `xgb_bo_res.z`: Results from hyperparameter tuning on XGBRegressor
+- `cb_bo_res.z`: Results from hyperparameter tuning on CatBoostRegressor
+- `rf_bo_res.z`: Results from hyperparameter tuning on RandomForestRegressor
+- `svr_bo_res.z`: Results from hyperparameter tuning on SVR(RBF)
+- `gbr_bo_res.z`: Results from hyperparameter tuning on GradientBoostingRegressor
+
+Should the serialized model files(.pkl) be absent and non_recoverable, an alternative method is to load the result file for the specific model, and retrain the model using the loaded hyperparameters on a dataset. <br>
+To replicate this the following line `res = load_model(hyperparams_file=<results_file>)` using the `load_model` function provided in each model script will load a list containing the hyperparameters from the result of tuning the each model.
+
+---
+### Warning
+Note that each result file can only be used on it's specific model, and requires the presence of the implemented objective function at time of hyperparameter tuning to be loaded properly. Hence, it is *not recommended to make changes to the objective functions provided in the base model scripts*.
+
+---
+
 ---
 ### Note
 When developing and tuning the SVR(RBF) model, take note that the time taken is drastically longer than the other models as the size of the training data increases, the time taken for training the SVR model increases quadratically(O(*n<sup>2<sup>*)) due to the fact that SVR needs to compute distance between each data point to identify support vectors. It is recommended to downsize the dataset if the dataset is too large to reduce the training time significantly.

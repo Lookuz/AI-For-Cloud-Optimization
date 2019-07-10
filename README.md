@@ -21,6 +21,8 @@ The algorithm that we use to predict the CPU and memory utilization of a user pr
 
 from the Scikit-Learn(sklearn), CatBoost(catboost) and XGBoost(xgb) libraries. These 5 models are trained and tuned using Bayesian Optimization to approximate the best hyperparameters, and then stacked together using a layer 2 regression model using the vecstack library. The Scikit-Optimize library(skopt) was used for hyperparameter tuning using Bayesian Optimization.
 
+By stacking the base models and stacking them to form new 2nd layer meta learner, this new L2 model is able to identify the specific areas of the hypothesis space that each base model performs better at. The L2 meta learner model is also able to consolidate the stacked predictions and encompass a larger portion of the hypothesis space since it observes the predictions of each base models, hence providing a more accurate and reliable prediction.
+
 The following scripts are auxiliary scripts for data extraction to be used with the recommendation tool:
 
 ## Resource Recommendation:
@@ -34,6 +36,10 @@ The follow scripts that bundled together in the `resource_recommendation/` direc
 - `queue_recommendation`: Provides the resource recommendation given the predicted resources, as well as queue recommendation using a self defined metric to select the most optimal queue for the user
 - `recommendation_global`: Module that contains all the global variables and parameters used across model development and resource recommendation tools
 - `resource_recommendation`: Main recommendation script that takes in the job script name from a user, and produces a job script with the recommended resources
+- `preproc.py`: Module that performs preprocessing on raw historical logs of past job scripts submitted.
+- `write_csv.py`: Module that provides reading dataset from a serialized pickle(.pkl) file
+- `user2dept.py`: Provides mappings for each user to it's respective department it belongs to.
+
 
 ### Model Files
 
@@ -51,6 +57,14 @@ There are also 3 layer-2(L2) models that are available to be used in stacking in
 - `cb_l2.pkl`: L2 CatBoostRegressor
 - `lr_l2.pkl`: L2 LinearRegressor
 
+### Encodings
+
+Categorical features such as queue, department and user are also converted to a numerical form using label encodings(`sklearn.LabelEncoder`). The encoding files have been provided in a serialized format.
+
+- `dept_encoder.pkl`: Encodings for department feature
+- `queue_encoder.pkl`: Encodings for queue feature
+- `user_encoder.pkl`: Encodings for user feature
+
 ## Model Development
 
 The follow scripts are are used in the development, training, testing and tuning of models used in the overall prediction algorithm for resource recommendation in the `model_development/` directory. 
@@ -60,6 +74,14 @@ The follow scripts are are used in the development, training, testing and tuning
 - `rf_tuning.py`: Script for developing, training and tuning RandfomForestRegressor
 - `svr_tuning.py`: Script for developing, training and tuning SVR(RBF Kernel)
 - `gbr_tuning.py`: Script for developing, training and tuning GradientBoostingRegressor
+
+Results from hyperparameter tuning using `skopt` are also saved in a compressed file format(.z)
+
+- `xgb_bo_res.z`: Results from hyperparameter tuning on XGBRegressor
+- `cb_bo_res.z`: Results from hyperparameter tuning on CatBoostRegressor
+- `rf_bo_res.z`: Results from hyperparameter tuning on RandomForestRegressor
+- `svr_bo_res.z`: Results from hyperparameter tuning on SVR(RBF)
+- `gbr_bo_res.z`: Results from hyperparameter tuning on GradientBoostingRegressor
 
 ## Dependencies
 
