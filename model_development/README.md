@@ -31,6 +31,9 @@ When developing and tuning the SVR(RBF) model, take note that the time taken is 
 
 Model script for developing, training and tuning the L2 model is also provided as `model_stacking.py`. `model_stacking.py` requires the base models to already been trained and tuned, as well as saved to a serialized pickle file(e.g `xgb.pkl` for XGBRegressor). These files will be used to load the base models using the `load_models` function in `ai_cloud_model`. Alternatively, it also possible to provided a custom list of L1 models.
 
+Mathematically, if the base models are represent as functions where _f<sub>i<sub>_ is the _i<sup>th<sup>_ model a such:
+![l1_models](https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l1_models.png)
+
 The base models are stacked to produce a new set of features using the predictions of the base models. This set of new features are then used as training data for the L2 meta learner model in the script to fit and train on. Similar to the base model scripts, the L2 model is then tuned to find the best hyperparameters using Bayesian Optimization via the SciKit-Optimize library.
 
 Similar to training the SVR(RBF) model, model stacking can take a long time to complete. If the dataset gets large, it is recommended to either downsize the dataset to a reasonable size, or be prepared to wait a long time before results are returned.<br>
