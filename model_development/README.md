@@ -33,15 +33,15 @@ Model script for developing, training and tuning the L2 model is also provided a
 
 Mathematically, if the base models are represent as functions where _f<sub>i<sub>_ is the _i<sup>th<sup>_ model as such:
 
-<img float="left" height="40" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l1_models.png">
+<img float="left" height="35" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l1_models.png">
 
 Then, for each training example *x*, a new feature vector *x<sub>s<sub>* is produced as follows by obtaining the prediction of each base model _f<sub>i<sub>_ on the training example *x*:
   
-<img float="left" height="50" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l2_features.png">
+<img float="left" height="80" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l2_features.png">
 
 Then, this new feature vector *x<sub>s<sub>* is used as a training example for the L2 meta learner which produces a prediction value *y<sub>pred<sub>* based on *x<sub>s<sub>* as input features.
   
-<img float="left" height="50" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l2_prediction.png">
+<img float="left" height="80" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l2_prediction.png">
 
 where the L2 meta learner can be viewed as a representation of vector of weights *w*.
 
