@@ -3,7 +3,7 @@
  This directory contains the modules and files that are required for resource prediction, recommendation and processing for a given job script.
 
  To run the resource recommendation tool, use the following format to run the `resource_recommendation.py` script:<br>
- 
+
  `python3 resource_recommendation.py <job_script> [-t] [-v]`<br>
  where `<job_script>` is the job script to produce the recommendation of resources for.
 
@@ -23,7 +23,7 @@
  - `cb_l2.pkl`: L2 CatBoostRegressor
  - `lr_l2.pkl`: L2 LinearRegressor
 
- By default, the L2 XGBRegressor is used as the L2 model for stacked prediction of the base models. To change the L2 model to be used for stacking, simply change the `l2_model=` argument in the `l2_predict` function from `ai-cloud_model`. For more information on model stacking, see http://blog.kaggle.com/2016/12/27/a-kagglers-guide-to-model-stacking-in-practice/.
+ By default, the L2 XGBRegressor is used as the L2 model for stacked prediction of the base models. To change the L2 model to be used for stacking, simply change the `l2_model=` argument in the `l2_predict` function from `ai-cloud_model`. For more information on model stacking, see http://blog.kaggle.com/2016/12/27/a-kagglers-guide-to-model-stacking-in-practice/, as well as the description on model stacking under https://github.com/Lookuz/AI-For-Cloud-Optimization/edit/master/model_development/README.md.
 
  The prediction algorithms provided by the `ai_cloud_model` module also allows for custom L1 and L2 models to be used in place of the defaults provided. However, do note that the L1 models needs to be trained and fitted on the same structure and shape of data as the L1 models provided, and the L2 model provided must be fitted on the shape equal to the number of L1 models used in base prediction. 
 

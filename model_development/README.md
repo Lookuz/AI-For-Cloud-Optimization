@@ -31,11 +31,11 @@ When developing and tuning the SVR(RBF) model, take note that the time taken is 
 
 Model script for developing, training and tuning the L2 model is also provided as `model_stacking.py`. `model_stacking.py` requires the base models to already been trained and tuned, as well as saved to a serialized pickle file(e.g `xgb.pkl` for XGBRegressor). These files will be used to load the base models using the `load_models` function in `ai_cloud_model`. Alternatively, it also possible to provided a custom list of L1 models.
 
-Mathematically, if the base models are represent as functions where _f<sub>i<sub>_ is the _i<sup>th<sup>_ model a such:
+Mathematically, if the base models are represent as functions where _f<sub>i<sub>_ is the _i<sup>th<sup>_ model as such:
 
 <img float="left" height="40" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l1_models.png">
 
-Then, for each training example *x*, a new feature vector *x<sub>s<sub>* is produced as follows:
+Then, for each training example *x*, a new feature vector *x<sub>s<sub>* is produced as follows by obtaining the prediction of each base model _f<sub>i<sub>_ on the training example *x*:
   
 <img float="left" height="50" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l2_features.png">
 
@@ -44,6 +44,11 @@ Then, this new feature vector *x<sub>s<sub>* is used as a training example for t
 <img float="left" height="50" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/l2_prediction.png">
 
 where the L2 meta learner can be viewed as a representation of vector of weights *w*.
+
+Overview of prediction pipeline for prediction using model stacking:
+
+<img align="center" src="https://github.com/Lookuz/AI-For-Cloud-Optimization/blob/master/model_development/images/stacking_overview.png">
+
 
 The base models are stacked to produce a new set of features using the predictions of the base models. This set of new features are then used as training data for the L2 meta learner model in the script to fit and train on. Similar to the base model scripts, the L2 model is then tuned to find the best hyperparameters using Bayesian Optimization via the SciKit-Optimize library.
 
