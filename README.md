@@ -72,19 +72,19 @@ The follow scripts are are used in the development, training, testing and tuning
 
 To install any missing dependencies, use the following command to install directly as a library in Python:
 
-`pip install '<'package'>'` <br>
-where `'<'package'>'` for a specific module is specified in brackets above
+`pip install <package>` <br>
+where `<package>` for a specific module is specified in brackets above
 
 Or install the dependency as a package in an Anaconda environment:
 
-`conda install -c conda-forge '<'package'>'`
+`conda install -c conda-forge <package>`
 
 Upcoming Improvements:
 - 
-*Queue Recommendation*
+**Queue Recommendation**
 
 The script queue_recommendation.py is currently in progress that measures the load across cluster queues, and aims to recommend a less busy queue to submit the job to if applicable. This is aimed at the balancing of loads across clusters to better optimize the utilization of available resources in a server cluster
 
-*Neural Networks*
+**Neural Networks**
 
 Neural networks have been known to do well in modelling the relationship between dependent and indepedent variables as well as complex structures in data. We aim to further research on the use of neural networks as both layer 1 and 2 models in the stacking framework that we have proposed as an improvement to our current prediction algorithm.
