@@ -3,6 +3,7 @@
  This directory contains the modules and files that are required for resource prediction, recommendation and processing for a given job script.
 
  To run the resource recommendation tool, use the following format to run the `resource_recommendation.py` script:<br>
+ 
  `python3 resource_recommendation.py <job_script> [-t] [-v]`<br>
  where `<job_script>` is the job script to produce the recommendation of resources for.
 
