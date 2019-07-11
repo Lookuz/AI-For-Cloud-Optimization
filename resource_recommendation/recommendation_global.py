@@ -3,7 +3,7 @@
 
 DEFAULT_FILE_NAME = 'queue_default.json' # File to save queue default parameters to
 DEFAULT_QUEUE = 'short'
-whitelist_queues = ['parallel8', 'parallel12', 'parallel20', 'parallel24', 'serial', 'short', 'gpu']
+whitelist_queues = ['parallel8', 'parallel12', 'parallel20', 'parallel24', 'serial', 'short']
 DEPT_FILE_NAME = 'user_dept.txt' # File to get user to dept mappings
 
 # Blacklist queues - Don't recommend queues for jobs submitted to these queues

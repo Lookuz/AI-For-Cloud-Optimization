@@ -11,7 +11,7 @@ import ai_cloud_model
 import queue_extract
 import queue_recommendation
 import job_script_process
-from recommendation_global import MEM_KEY, blacklist_queues
+from recommendation_global import MEM_KEY, USER_KEY, blacklist_queues
 
 # Imported libraries
 import sys
@@ -21,6 +21,7 @@ import numpy as np
 import time
 import io
 import argparse
+import logging
 
 # Command line argument options
 OPT_JOB_SCRIPT = 'job_script'
@@ -28,6 +29,8 @@ OPT_VERBOSE_LONG = '--verbose'
 OPT_VERBOSE_SHORT = '-v'
 OPT_TIME_LONG = '--time'
 OPT_TIME_SHORT = '-t'
+LOG_FILE = 'resource_recommendation.log'
+SEPARATOR = '===================================================================================='
 
 # Function that initializes a command line argument parser for the script
 # Returns a argparser.ArgumentParser object with the necessary command line arguments to be taken in
@@ -39,6 +42,14 @@ def init_parser():
 
     return parser
 
+# Function that initializes a logger object for logging prediction information
+# Sets the parameters for a root logger object that writes information to log file
+# Returns logger with the root logging settings
+def init_logger():
+    logging.basicConfig(filename=LOG_FILE, filemode='a', level=20, format='%(message)s')
+    
+    return logging.getLogger()
+
 # Recommandation routine to be executed
 def main(job_script, verbose=False, _time=False):
 
@@ -46,9 +57,13 @@ def main(job_script, verbose=False, _time=False):
         sys.stdout = io.StringIO() # Suppress messages from modules 
         sys.stderr = io.StringIO() # Suppress warning messages
 
+    logger = init_logger()
+    logger.info(SEPARATOR)
+
     # Extract resource values from script
     start_time = time.time()
     job_info = job_script_process.parse_job_script(job_script)
+    logger.info('User: %s', job_info[USER_KEY])
     job_df = ai_cloud_etl.to_dataframe(job_info)
     job_process_elapsed = time.time() - start_time
     
@@ -68,16 +83,18 @@ def main(job_script, verbose=False, _time=False):
     l2_model = ai_cloud_model.load_model(model_name='xgb_l2')
     load_models_elapsed = time.time() - start_time
 
-    sys.stdout = sys.__stdout__ # restore stdout
-    sys.stderr = sys.__stderr__ # restore stderr
-
     # Get CPU recommendation
     start_time = time.time()
     queue = job_info['queue']
     estimated_cores = ai_cloud_model.l2_predict(models=models, l2_model=l2_model, x=job_df) # estimated CPU prediction
     select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=queue)
+    print('Predicted Number of CPUs:', estimated_cores)
+    logger.info('Predicted Number of CPUs: %s', estimated_cores)
     prediction_elapsed = time.time() - start_time
     memory = int(job_info[MEM_KEY])
+
+    sys.stdout = sys.__stdout__ # restore stdout
+    sys.stderr = sys.__stderr__ # restore stderr
 
     # Prompt for recommended job script
     # To do bounding: cannot be lower than queue min/ higher than queue max
@@ -102,6 +119,7 @@ def main(job_script, verbose=False, _time=False):
     # Write out recommended job script file
     output_file = job_script_process.generate_recommendation(select=select, ncpus=recommended_cores, memory=memory, queue=queue, job_script=job_script)
     print('Recommended job script saved to', output_file)
+    logger.info('queue=%s:select=%s:ncpus=%s:mem=%s', queue, select, recommended_cores, memory)
 
     if _time: # Output runtimes of each code segment to evaluate performance of script
         print('Job scripting processing time:', job_process_elapsed)

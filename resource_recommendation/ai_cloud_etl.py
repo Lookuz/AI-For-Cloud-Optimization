@@ -21,7 +21,7 @@ whitelist_cols_x = ['Resource_List.ncpus', 'Resource_List.mem', 'queue', 'dept',
 whitelist_cols_y = ['estimated_cores_used_eng']
 whitelist_cols_y_mem = ['resources_used.mem']
 whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short', 
-                        'parallel24', 'openmp']
+                        'parallel24']
 
 QUEUE_ENCODING = 'queue_encoder.pkl'
 DEPT_ENCODING = 'dept_encoder.pkl'

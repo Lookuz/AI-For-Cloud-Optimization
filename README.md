@@ -74,6 +74,7 @@ The follow scripts are are used in the development, training, testing and tuning
 - `rf_tuning.py`: Script for developing, training and tuning RandfomForestRegressor
 - `svr_tuning.py`: Script for developing, training and tuning SVR(RBF Kernel)
 - `gbr_tuning.py`: Script for developing, training and tuning GradientBoostingRegressor
+- `model_stacking.py`: Script that develops, trains and tunes a stacked L2 model from predictions of the base L1 models
 
 Results from hyperparameter tuning using `skopt` are also saved in a compressed file format(.z)
 
