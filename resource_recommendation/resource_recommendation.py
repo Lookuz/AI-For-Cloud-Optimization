@@ -91,7 +91,7 @@ def main(job_script, verbose=False, _time=False):
     print('Predicted Number of CPUs:', estimated_cores)
     logger.info('Predicted Number of CPUs: %s', estimated_cores)
     prediction_elapsed = time.time() - start_time
-    memory = int(job_info[MEM_KEY])
+    memory = ai_cloud_etl.mem_to_str(job_info[MEM_KEY])
 
     sys.stdout = sys.__stdout__ # restore stdout
     sys.stderr = sys.__stderr__ # restore stderr

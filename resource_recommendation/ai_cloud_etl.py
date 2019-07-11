@@ -6,6 +6,7 @@ import numpy as np
 import sys
 import joblib
 import recommendation_global
+from math import ceil
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
 
@@ -233,3 +234,19 @@ def bin_users(df):
 
     user_count = df['user'].value_counts().to_dict() # Get count of how many jobs user has submitted
     return df['user'].apply(lambda x: x if user_count[x] > threshold else 'others')
+
+# Function that converts memory in KB float format to either MB or GB
+# Depending on the memory value.
+# Returns a string containing the memory in gb with a gb suffix if memory is > 1gb
+# Returns a string containing the memory in mb with an mb suffix if memory is > 1mb
+# Else returns the memory in kb format with the kb suffix
+def mem_to_str(mem):
+    mem_mb = mem/1024
+    mem_gb = mem_mb/1024
+    
+    if mem_gb > 1:
+        return str(int(ceil(mem_gb))) + 'gb'
+    elif mem_mb > 1:
+        return str(int(ceil(mem_mb))) + 'mb'
+    else:
+        return str(int(mem)) + 'kb'
