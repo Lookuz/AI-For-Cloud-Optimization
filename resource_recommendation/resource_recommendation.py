@@ -91,6 +91,7 @@ def main(job_script, verbose=False, _time=False):
     print('Predicted Number of CPUs:', estimated_cores)
     logger.info('Predicted Number of CPUs: %s', estimated_cores)
     prediction_elapsed = time.time() - start_time
+    
     memory = ai_cloud_etl.mem_to_str(job_info[MEM_KEY])
 
     sys.stdout = sys.__stdout__ # restore stdout
@@ -104,12 +105,14 @@ def main(job_script, verbose=False, _time=False):
     while queue not in blacklist_queues:
         response = str(input('Get additional queue recommendation for provided job script[y/n]? '))
         if response == 'y':
+            logger.info('Queue Recommendation Taken: yes')
             queue, (select, recommended_cores) = queue_recommendation.recommend_all(est_cpu=estimated_cores) # NOTE: Provide custom evaluation metric if needed
             print('Queue recommended:', queue)
             print('Recommended number of nodes:', select)
             print('Recommended number of CPUs(per node):', recommended_cores)
             break
         elif response == 'n':
+            logger.info('Queue Recommendation Taken: no')
             print('Using current queue:', queue)
             break
         else:

@@ -45,7 +45,7 @@ def recommend_cpu(est_cpu, queue):
             pass
 
         else:
-            threshold = 0.2 # threshold for rounding down instead of up. If node efficiency for the last node is less than this value, the node is not assigned
+            threshold = 0.5 # threshold for rounding down instead of up. If node efficiency for the last node is less than this value, the node is not assigned
             select = est_cpu/float(min_cpu)
             node_eff_bneck = select - floor(select)
             if node_eff_bneck < threshold:
