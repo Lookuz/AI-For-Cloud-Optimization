@@ -2,6 +2,7 @@
 # Routine and subroutine scripts for resource recommendation
 
 DEFAULT_FILE_NAME = 'queue_default.json' # File to save queue default parameters to
+STATE_FILE_NAME = 'queue_state.json' # File to save queue states(running jobs, queued jobs) to
 DEFAULT_QUEUE = 'short'
 whitelist_queues = ['parallel8', 'parallel12', 'parallel20', 'parallel24', 'serial', 'short']
 DEPT_FILE_NAME = 'user_dept.txt' # File to get user to dept mappings
@@ -17,9 +18,14 @@ DEPT_KEY = 'dept'
 USER_KEY = 'user'
 MPIPROC_KEY = 'Resource_List.mpiprocs'
 
-# Default extraction scripts
+# State keys
+RUNNING_KEY = 'running'
+QUEUED_KEY = 'queued'
+
+# Default intermediate extraction scripts
 QUEUE_EXTRACT = 'queue_extract.sh'
 MEM_EXTRACT = 'mem_extract.sh'
+STATE_EXTRACT = 'q_state.sh'
 
 # Default keys
 DEFAULT_CPU = 'default_cpu'

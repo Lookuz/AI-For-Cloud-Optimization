@@ -3,7 +3,7 @@ import sys
 import re
 import json
 from mem_extract import get_mem_default
-from recommendation_global import DEFAULT_FILE_NAME, whitelist_queues, DEFAULT_CPU, DEFAULT_MEM, MAX_CPU, MIN_CHUNK
+from recommendation_global import DEFAULT_FILE_NAME, whitelist_queues, DEFAULT_CPU, DEFAULT_MEM, MAX_CPU, MIN_CHUNK, QUEUE_EXTRACT, MEM_EXTRACT, STATE_EXTRACT, RUNNING_KEY, QUEUED_KEY, STATE_FILE_NAME
 # Routine script that processes that current statistics of each active queue
 # Takes in the subroutine script to be called as the first command line argument
 # Outputs a JSON file containing the defaults to be usedin the recommendation tool in situations where
@@ -22,6 +22,26 @@ def get_queue_details(queue_extract):
         return res
     except FileNotFoundError:
         print('Specified file does not exist, program terminating')
+        sys.exit(-2)
+
+# Function that retrieves the current job states of the queue
+# Takes in a state extraction script that extracts the job states of each queue
+# NOTE: Script should return result in the format of <queue>,<running_jobs_no>,<queued_jobs_no>
+# Returns a dictionary containing the numberof running and queued jobs for each queue
+def get_queue_state(state_extract):
+    try:
+        q_state_list = subprocess.check_output(['./' + state_extract]).decode('ascii').split('\n')
+        q_state_list = [line for line in q_state_list if line != '']
+        q_states = {}
+        for line in q_state_list:
+            queue, running, queued = tuple(line.split(','))
+            q_states[queue.strip()] = {}
+            q_states[queue.strip()][RUNNING_KEY] = int(running.strip())
+            q_states[queue.strip()][QUEUED_KEY] = int(queued.strip())
+        
+        return q_states
+    except FileNotFoundError:
+        print('Queue job state extraction script not found')
         sys.exit(-2)
 
 # Extracts the default parameters of each queue
@@ -77,6 +97,7 @@ def get_queue_default(queue_extract, mem_extract):
                 q_default[q_lines[0].strip()][MIN_CHUNK] = 1
                 pass
 
+            # Get default memory assignment
             try:
                 q_default[q_lines[0].strip()][DEFAULT_MEM] = mem_default[q_lines[0].strip()]
             except KeyError:
@@ -84,23 +105,22 @@ def get_queue_default(queue_extract, mem_extract):
         
     return q_default
 
-# Function that saves the specified default object
-# as a serialized JSON file
-def save_default(q_default):
+# Function that saves the specified object as a serialized JSON file
+def save_file(q_file, filename):
     # Write to output JSON file
-    with open(DEFAULT_FILE_NAME, 'w') as outfile:
-        json.dump(q_default, outfile)
+    with open(filename, 'w') as outfile:
+        json.dump(q_file, outfile)
 
 if __name__ == '__main__':
     try:
-        # Get file names for subroutine scripts from command line arguments
-        queue_extract = sys.argv[1]
-        mem_extract = sys.argv[2]
-        q_default = get_queue_default(queue_extract=queue_extract, mem_extract=mem_extract)
-        save_default(q_default)
+        # Get queue defaults
+        q_default = get_queue_default(queue_extract=QUEUE_EXTRACT, mem_extract=MEM_EXTRACT)
+        save_file(q_default, DEFAULT_FILE_NAME)
         print('Saving queue defaults to', DEFAULT_FILE_NAME)
-    except IndexError:
-        print('One or more command line arguments missing')
-        print('Run the script using the following format: ')
-        print('python3', sys.argv[0], '<queue_extraction_script> <memory_extraction_script>')
+        # Get queue states
+        q_states = get_queue_state(state_extract=STATE_EXTRACT)
+        save_file(q_states, STATE_FILE_NAME)
+        print('Saving queue states to', STATE_FILE_NAME)
+    except EnvironmentError:
+        print('Error executing script')
         sys.exit(-1)

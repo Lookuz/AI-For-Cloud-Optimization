@@ -149,7 +149,12 @@ if __name__ == '__main__':
 
     if os.path.exists(job_script): # Check if path exists
         if os.path.isfile(job_script): # Check file provided is not directory
-            main(job_script, verbose=verbose, _time=_time)
+            try:
+                main(job_script, verbose=verbose, _time=_time)
+            except:
+                print('Error providing resource recommendation for job script.')
+                print('Please try again later.')
+                sys.exit(-1)
         else:
             print('File provided is not valid')
             sys.exist(-2)
