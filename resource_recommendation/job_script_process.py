@@ -6,7 +6,7 @@ import user2dept
 from math import floor
 from datetime import timedelta
 from preproc import convert_mem
-from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY, USER_KEY, DEFAULT_QUEUE
+from recommendation_global import DEFAULT_FILE_NAME, DEPT_FILE_NAME, CPU_KEY, DEPT_KEY, MEM_KEY, MPIPROC_KEY, QUEUE_KEY, USER_KEY, DEFAULT_QUEUE, DEFAULT_CPU, DEFAULT_MEM
 
 # Python subroutine script that takes in a PBS job script as a command line argument
 # Processes the job script by extracting necessary lines as features, and returning a serializable object 
@@ -115,7 +115,7 @@ def parse_job_script(job_script, save=False, _id=None):
                 ncpus = int(ncpus[0].replace(NCPUS_PREFIX, '').strip())
                 job_info[CPU_KEY] = select * ncpus
             except IndexError: # Missing ncpus, default to queue defaults and select = 1
-                ncpus = defaults[queue]['default_cpu']
+                ncpus = defaults[queue][DEFAULT_CPU]
                 job_info[CPU_KEY] = ncpus
             
             # Get memory requested
@@ -125,7 +125,7 @@ def parse_job_script(job_script, save=False, _id=None):
                 mem = convert_mem(mem) # Converts memory requested to KB float using preproc module
                 job_info[MEM_KEY] = mem
             except IndexError: # Missing mem
-                mem = convert_mem(defaults[queue]['default_mem'])
+                mem = convert_mem(defaults[queue][DEFAULT_MEM])
                 job_info[MEM_KEY] = mem
 
             # Get mpiprocs

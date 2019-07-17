@@ -14,9 +14,9 @@ DEFAULT_NCPU = 1
 
 # Loads the default parameters and values for each of the queues
 def load_defaults():
-    if (not os.path.exists(DEFAULT_FILE_NAME)): # Default file missing, run queue_extract subroutine
+    if not os.path.exists(DEFAULT_FILE_NAME): # Default file missing, run queue_extract subroutine
         q_default = queue_extract.get_queue_default(queue_extract=QUEUE_EXTRACT, mem_extract=MEM_EXTRACT)
-        queue_extract.save_default(q_default)
+        queue_extract.save_file(q_default)
     else: # Load from existing file
         with open(DEFAULT_FILE_NAME, 'r') as default_file:
             q_default = json.load(default_file)

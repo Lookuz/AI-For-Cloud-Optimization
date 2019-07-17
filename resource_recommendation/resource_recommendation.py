@@ -5,14 +5,6 @@
 # CatBoostRegressor, XGBRegressor, RandomForestRegressor, SVR with RBF Kernel, GradientBoostingRegressor
 # In the presence of missing/ out of bounds values, defaults are taken from the default file
 
-# Local modules
-import ai_cloud_etl
-import ai_cloud_model
-import queue_extract
-import queue_recommendation
-import job_script_process
-from recommendation_global import MEM_KEY, USER_KEY, blacklist_queues
-
 # Imported libraries
 import sys
 import os
@@ -20,8 +12,17 @@ import pandas as pd
 import numpy as np
 import time
 import io
+import json
 import argparse
 import logging
+
+# Local modules
+import ai_cloud_etl
+import ai_cloud_model
+import queue_extract
+import queue_recommendation
+import job_script_process
+from recommendation_global import MEM_KEY, USER_KEY, blacklist_queues, STATE_FILE_NAME, RUNNING_KEY, QUEUED_KEY
 
 # Command line argument options
 OPT_JOB_SCRIPT = 'job_script'
@@ -94,6 +95,12 @@ def main(job_script, verbose=False, _time=False):
     
     memory = ai_cloud_etl.mem_to_str(job_info[MEM_KEY])
 
+    try:
+        with open(STATE_FILE_NAME, 'r') as infile:
+            q_states = json.load(infile)
+    except FileNotFoundError:
+        q_states = None
+
     sys.stdout = sys.__stdout__ # restore stdout
     sys.stderr = sys.__stderr__ # restore stderr
 
@@ -102,14 +109,38 @@ def main(job_script, verbose=False, _time=False):
     print('Recommended number of nodes:', select)
     print('Recommended number of CPUs(per node):', recommended_cores)
     print('Total recommended number of CPUs:', select * recommended_cores)
+    print('')
+
     while queue not in blacklist_queues:
         response = str(input('Get additional queue recommendation for provided job script[y/n]? '))
         if response == 'y':
             logger.info('Queue Recommendation Taken: yes')
+            prev_queue = queue
             queue, (select, recommended_cores) = queue_recommendation.recommend_all(est_cpu=estimated_cores) # NOTE: Provide custom evaluation metric if needed
             print('Queue recommended:', queue)
             print('Recommended number of nodes:', select)
             print('Recommended number of CPUs(per node):', recommended_cores)
+            print('')
+
+            if q_states is not None:
+                try:
+                    running = q_states[queue][RUNNING_KEY]
+                    queued = q_states[queue][QUEUED_KEY]
+                    print('Load for  current queue:', queue)
+                    print('Number of running jobs:', running)
+                    print('Number of queued jobs:', queued)
+                    print('\n')
+
+                    if prev_queue != queue:
+                        running = q_states[prev_queue][RUNNING_KEY]
+                        queued = q_states[prev_queue][QUEUED_KEY]
+                        print('Load for previous queue:', prev_queue)
+                        print('Number of running jobs:', running)
+                        print('Number of queued jobs:', queued)
+
+                except KeyError:
+                    pass
+
             break
         elif response == 'n':
             logger.info('Queue Recommendation Taken: no')
@@ -152,6 +183,7 @@ if __name__ == '__main__':
             try:
                 main(job_script, verbose=verbose, _time=_time)
             except:
+                # General error handling
                 print('Error providing resource recommendation for job script.')
                 print('Please try again later.')
                 sys.exit(-1)

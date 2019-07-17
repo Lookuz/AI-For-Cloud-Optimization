@@ -1,5 +1,8 @@
 import numpy as np
 import sys
+import warnings
+warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+
 from ai_cloud_etl import save_data, load_data
 from itertools import chain
 from recommendation_global import FILE_CB, FILE_GBR, FILE_RF, FILE_SVR, FILE_XGB, FILE_CB_L2, FILE_XGB_L2, FILE_LR_L2
