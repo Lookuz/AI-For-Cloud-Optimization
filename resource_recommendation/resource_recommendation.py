@@ -14,7 +14,6 @@ import time
 import io
 import json
 import argparse
-import logging
 
 # Local modules
 import ai_cloud_etl
@@ -22,7 +21,8 @@ import ai_cloud_model
 import queue_extract
 import queue_recommendation
 import job_script_process
-from recommendation_global import MEM_KEY, USER_KEY, blacklist_queues, STATE_FILE_NAME, RUNNING_KEY, QUEUED_KEY
+import logger
+from recommendation_global import MEM_KEY, USER_KEY, DEPT_KEY, blacklist_queues, whitelist_queues, STATE_FILE_NAME, RUNNING_KEY, QUEUED_KEY
 
 # Command line argument options
 OPT_JOB_SCRIPT = 'job_script'
@@ -30,7 +30,6 @@ OPT_VERBOSE_LONG = '--verbose'
 OPT_VERBOSE_SHORT = '-v'
 OPT_TIME_LONG = '--time'
 OPT_TIME_SHORT = '-t'
-LOG_FILE = 'resource_recommendation.log'
 SEPARATOR = '===================================================================================='
 
 # Function that initializes a command line argument parser for the script
@@ -43,14 +42,6 @@ def init_parser():
 
     return parser
 
-# Function that initializes a logger object for logging prediction information
-# Sets the parameters for a root logger object that writes information to log file
-# Returns logger with the root logging settings
-def init_logger():
-    logging.basicConfig(filename=LOG_FILE, filemode='a', level=20, format='%(message)s')
-    
-    return logging.getLogger()
-
 # Recommandation routine to be executed
 def main(job_script, verbose=False, _time=False):
 
@@ -58,15 +49,26 @@ def main(job_script, verbose=False, _time=False):
         sys.stdout = io.StringIO() # Suppress messages from modules 
         sys.stderr = io.StringIO() # Suppress warning messages
 
-    logger = init_logger()
-    logger.info(SEPARATOR)
-
     # Extract resource values from script
     start_time = time.time()
     job_info = job_script_process.parse_job_script(job_script)
-    logger.info('User: %s', job_info[USER_KEY])
     job_df = ai_cloud_etl.to_dataframe(job_info)
     job_process_elapsed = time.time() - start_time
+
+    # Display error message to user:
+    # Recommendation only available for job scripts submitted to whitelisted queues
+    # Whitelisted queues represented by whitelist_queues in recommendation_global module
+    queue = job_info['queue']
+    if queue not in whitelist_queues:
+        print('Recommendation not available for current queue:', queue)
+        print('Resource recommendation available for the follow nodes:')
+        for q in whitelist_queues:
+            print(q)
+        return -1
+
+    _logger = logger.init_logger(user=job_info[USER_KEY], dept=job_info[DEPT_KEY])
+    logger.print_separator(_logger)
+    logger.log_user(_logger, user=job_info[USER_KEY])
     
     # Load queue/dept encodings 
     start_time = time.time()
@@ -90,7 +92,7 @@ def main(job_script, verbose=False, _time=False):
     estimated_cores = ai_cloud_model.l2_predict(models=models, l2_model=l2_model, x=job_df) # estimated CPU prediction
     select, recommended_cores = queue_recommendation.recommend_cpu(est_cpu=estimated_cores, queue=queue)
     print('Predicted Number of CPUs:', estimated_cores)
-    logger.info('Predicted Number of CPUs: %s', estimated_cores)
+    logger.log_ncpus(_logger, estimated_cores=estimated_cores)
     prediction_elapsed = time.time() - start_time
     
     memory = ai_cloud_etl.mem_to_str(job_info[MEM_KEY])
@@ -105,16 +107,19 @@ def main(job_script, verbose=False, _time=False):
     sys.stderr = sys.__stderr__ # restore stderr
 
     # Prompt for recommended job script
-    # To do bounding: cannot be lower than queue min/ higher than queue max
+    if queue in blacklist_queues:
+        print('Queue used:', queue)
+
     print('Recommended number of nodes:', select)
     print('Recommended number of CPUs(per node):', recommended_cores)
     print('Total recommended number of CPUs:', select * recommended_cores)
     print('')
 
+
     while queue not in blacklist_queues:
         response = str(input('Get additional queue recommendation for provided job script[y/n]? '))
         if response == 'y':
-            logger.info('Queue Recommendation Taken: yes')
+            logger.log_recommendation(_logger, True)
             prev_queue = queue
             queue, (select, recommended_cores) = queue_recommendation.recommend_all(est_cpu=estimated_cores) # NOTE: Provide custom evaluation metric if needed
             print('Queue recommended:', queue)
@@ -129,7 +134,7 @@ def main(job_script, verbose=False, _time=False):
                     print('Load for  current queue:', queue)
                     print('Number of running jobs:', running)
                     print('Number of queued jobs:', queued)
-                    print('\n')
+                    print('')
 
                     if prev_queue != queue:
                         running = q_states[prev_queue][RUNNING_KEY]
@@ -143,7 +148,7 @@ def main(job_script, verbose=False, _time=False):
 
             break
         elif response == 'n':
-            logger.info('Queue Recommendation Taken: no')
+            logger.log_recommendation(_logger, False)
             print('Using current queue:', queue)
             break
         else:
@@ -153,7 +158,7 @@ def main(job_script, verbose=False, _time=False):
     # Write out recommended job script file
     output_file = job_script_process.generate_recommendation(select=select, ncpus=recommended_cores, memory=memory, queue=queue, job_script=job_script)
     print('Recommended job script saved to', output_file)
-    logger.info('queue=%s:select=%s:ncpus=%s:mem=%s', queue, select, recommended_cores, memory)
+    logger.log_job_info(_logger, queue=queue, select=select, ncpus=recommended_cores, memory=memory)
 
     if _time: # Output runtimes of each code segment to evaluate performance of script
         print('Job scripting processing time:', job_process_elapsed)
@@ -182,7 +187,7 @@ if __name__ == '__main__':
         if os.path.isfile(job_script): # Check file provided is not directory
             try:
                 main(job_script, verbose=verbose, _time=_time)
-            except:
+            except UserWarning:
                 # General error handling
                 print('Error providing resource recommendation for job script.')
                 print('Please try again later.')

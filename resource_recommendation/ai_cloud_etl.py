@@ -4,6 +4,7 @@ import numpy as np
 import sys
 import joblib
 import recommendation_global
+from recommendation_global import QUEUE_ENCODING, DEPT_ENCODING, USER_ENCODING
 from math import ceil
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split, GridSearchCV
@@ -22,9 +23,6 @@ whitelist_cols_y_mem = ['resources_used.mem']
 whitelist_queues = ['parallel12', 'serial', 'parallel20', 'parallel8', 'short', 
                         'parallel24']
 
-QUEUE_ENCODING = 'queue_encoder.pkl'
-DEPT_ENCODING = 'dept_encoder.pkl'
-USER_ENCODING = 'user_encoder.pkl'
 
 # Extracts the necessary columns from the dataset
 def extract_cols(df, whitelist_cols):

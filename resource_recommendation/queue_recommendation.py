@@ -29,6 +29,7 @@ q_default = load_defaults() # Load queue defaults
 # based on the predicted CPU utilization and the queue settings
 # returns (select, ncpus)
 def recommend_cpu(est_cpu, queue):
+    # Place lower bound on predicted CPU using min_cpu setting; CPUs allocated cannot be less than min_cpu
     try:
         min_cpu = q_default[queue][DEFAULT_CPU]
         min_chunk = q_default[queue][MIN_CHUNK]
